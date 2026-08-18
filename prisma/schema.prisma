@@ -1,0 +1,238 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum GovtCategory {
+  CENTRAL
+  STATE
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  PREPARER
+}
+
+enum StatementType {
+  ORIGINAL
+  CORRECTION_M
+  CORRECTION_X
+}
+
+enum DdoMode {
+  ADD
+  UPDATE
+  DELETE
+  NO_CHANGE
+}
+
+enum RecordStatus {
+  STAGING
+  VALIDATED
+  FINAL
+}
+
+enum GeneratedFileStatus {
+  PENDING
+  FVU_PASSED
+  FVU_FAILED
+}
+
+enum FilingPeriodStatus {
+  DRAFT
+  LOCKED
+}
+
+/** A Tax Professional firm (or the platform operator itself, for the seeded SUPER_ADMIN). */
+model Organization {
+  id           String  @id @default(cuid())
+  name         String
+  contactEmail String?
+  contactPhone String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users   User[]
+  clients Client[]
+}
+
+model User {
+  id             String       @id @default(cuid())
+  email          String       @unique
+  passwordHash   String
+  name           String
+  role           UserRole     @default(PREPARER)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/** An actual filing entity (Accounts Office/DTO/CDDO) that a Tax Professional firm files returns for. */
+model Client {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  ain              String       @unique
+  tan              String?
+  ministryName     String?
+  /** Mandatory when AO Category = Central government (Annexure 4). */
+  subMinistryName  String?
+  departmentName   String
+  govtCategory   GovtCategory
+  /** Annexure 8 country code. Mandatory on BH from FY2026-27 (F137) onward. */
+  countryCode    String?
+
+  /** Used for FY2025-26 and earlier (legacy 24G); superseded by the split name fields below from FY2026-27 onward. */
+  responsiblePersonName        String?
+  responsiblePersonFirstName   String?
+  responsiblePersonMiddleName  String?
+  responsiblePersonLastName    String?
+  responsiblePersonDesignation String
+  responsiblePersonAddress1    String
+  responsiblePersonAddress2    String?
+  responsiblePersonAddress3    String?
+  responsiblePersonAddress4    String?
+  responsiblePersonCity        String
+  responsiblePersonState       String
+  responsiblePersonPin         String
+  responsiblePersonStdCode     String?
+  responsiblePersonPhone       String?
+  responsiblePersonMobile      String?
+  responsiblePersonEmail       String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  filingPeriods FilingPeriod[]
+  ddoMasters    DdoMaster[]
+
+  @@index([organizationId])
+}
+
+/** Reusable DDO identity/contact details for a Client, entered once and selected on each filing. */
+model DdoMaster {
+  id       String @id @default(cuid())
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  tan  String
+  name String
+
+  // Legacy (FY2025-26 and earlier) DDO address fields — not applicable from FY2026-27 onward
+  address1 String?
+  address2 String?
+  address3 String?
+  address4 String?
+  city     String?
+  state    String?
+  pin      String?
+  ddoRegNo String?
+  ddoCode  String?
+  email    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ddoRecords DdoRecord[]
+
+  @@unique([clientId, tan])
+}
+
+model FilingPeriod {
+  id            String        @id @default(cuid())
+  clientId      String
+  client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  financialYear Int
+  month         Int
+  statementType StatementType @default(ORIGINAL)
+  schemaVersion String        @default("v1_9")
+
+  status        FilingPeriodStatus @default(DRAFT)
+  lockedAt      DateTime?
+  receiptNumber String?
+  receiptDate   DateTime?
+
+  ddoRecords     DdoRecord[]
+  generatedFiles GeneratedFile[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clientId, financialYear, month, statementType])
+}
+
+model DdoRecord {
+  id             String       @id @default(cuid())
+  filingPeriodId String
+  filingPeriod   FilingPeriod @relation(fields: [filingPeriodId], references: [id], onDelete: Cascade)
+
+  /** Nullable at the DB level for backward compatibility; the API requires it for all new entries. */
+  ddoMasterId String?
+  ddoMaster   DdoMaster? @relation(fields: [ddoMasterId], references: [id], onDelete: SetNull)
+
+  serialNo Int
+  // tan/name (and the address fields below) are a SNAPSHOT copied from the
+  // selected DdoMaster at save time, not a live reference — once a period is
+  // LOCKED its filed data must stay exactly what was actually submitted even
+  // if the DDO's master record is edited later.
+  tan      String
+  name     String
+
+  // Legacy (FY2025-26 and earlier) DDO address fields — not applicable from FY2026-27 onward
+  address1  String?
+  address2  String?
+  address3  String?
+  address4  String?
+  city      String?
+  state     String?
+  pin       String?
+  ddoRegNo  String?
+  ddoCode   String?
+  email     String?
+
+  taxDeducted        Decimal @db.Decimal(15, 2)
+  formType            String?
+  totalRemitted       Decimal @db.Decimal(15, 2)
+  natureOfDeduction   String?
+
+  mode   DdoMode      @default(ADD)
+  status RecordStatus @default(STAGING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([filingPeriodId])
+  @@unique([filingPeriodId, ddoMasterId, formType])
+}
+
+model GeneratedFile {
+  id             String              @id @default(cuid())
+  filingPeriodId String
+  filingPeriod   FilingPeriod        @relation(fields: [filingPeriodId], references: [id], onDelete: Cascade)
+
+  rawTextPath String
+  fvuFilePath String?
+  errHtmlPath String?
+  receiptPath String?
+  fvuVersion  String
+  status      GeneratedFileStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+}
+
+/** Singleton row (id="singleton") caching the last FVU-version scrape, so pages don't hit Protean's site on every load. */
+model FvuVersionStatus {
+  id               String   @id @default("singleton")
+  supportedVersion String
+  detectedVersion  String?
+  isNewer          Boolean  @default(false)
+  checkedAt        DateTime @default(now())
+}

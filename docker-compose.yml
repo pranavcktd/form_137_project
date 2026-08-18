@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: form137
+      POSTGRES_PASSWORD: form137
+      POSTGRES_DB: form137
+    ports:
+      - "5432:5432"
+    volumes:
+      - form137-db:/var/lib/postgresql/data
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://form137:form137@db:5432/form137
+      AUTH_SECRET: ${AUTH_SECRET}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      ALERT_EMAIL_TO: ${ALERT_EMAIL_TO}
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
+      SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL}
+      SUPER_ADMIN_PASSWORD: ${SUPER_ADMIN_PASSWORD}
+      SUPER_ADMIN_NAME: ${SUPER_ADMIN_NAME}
+      FVU_WORKDIR: /app/storage/generated
+    ports:
+      - "3000:3000"
+    volumes:
+      - form137-generated:/app/storage/generated
+
+volumes:
+  form137-db:
+  form137-generated:

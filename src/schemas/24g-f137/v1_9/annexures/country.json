@@ -1,0 +1,1142 @@
+[
+  {
+    "name": "AFGHANISTAN",
+    "code": "1"
+  },
+  {
+    "name": "AKROTIRI",
+    "code": "2"
+  },
+  {
+    "name": "ALBANIA",
+    "code": "3"
+  },
+  {
+    "name": "ALGERIA",
+    "code": "4"
+  },
+  {
+    "name": "AMERICAN SAMOA",
+    "code": "5"
+  },
+  {
+    "name": "ANDORRA",
+    "code": "6"
+  },
+  {
+    "name": "ANGOLA",
+    "code": "7"
+  },
+  {
+    "name": "ANGUILLA",
+    "code": "8"
+  },
+  {
+    "name": "ANTARCTICA",
+    "code": "9"
+  },
+  {
+    "name": "ANTIGUA AND BARBUDA",
+    "code": "10"
+  },
+  {
+    "name": "ARGENTINA",
+    "code": "11"
+  },
+  {
+    "name": "ARMENIA",
+    "code": "12"
+  },
+  {
+    "name": "ARUBA",
+    "code": "13"
+  },
+  {
+    "name": "ASHMORE AND CARTIER ISLANDS",
+    "code": "14"
+  },
+  {
+    "name": "AUSTRALIA",
+    "code": "15"
+  },
+  {
+    "name": "AUSTRIA",
+    "code": "16"
+  },
+  {
+    "name": "AZERBAIJAN",
+    "code": "17"
+  },
+  {
+    "name": "BAHRAIN",
+    "code": "18"
+  },
+  {
+    "name": "BAILIWICK OF GUERNSEY",
+    "code": "19"
+  },
+  {
+    "name": "BAILIWICK OF JERSEY",
+    "code": "20"
+  },
+  {
+    "name": "BAKER ISLAND",
+    "code": "21"
+  },
+  {
+    "name": "BANGLADESH",
+    "code": "22"
+  },
+  {
+    "name": "BARBADOS",
+    "code": "23"
+  },
+  {
+    "name": "BELARUS",
+    "code": "24"
+  },
+  {
+    "name": "BELGIUM",
+    "code": "25"
+  },
+  {
+    "name": "BELIZE",
+    "code": "26"
+  },
+  {
+    "name": "BENIN PORTO",
+    "code": "27"
+  },
+  {
+    "name": "BERMUDA",
+    "code": "28"
+  },
+  {
+    "name": "BHUTAN",
+    "code": "29"
+  },
+  {
+    "name": "BOLIVIA",
+    "code": "30"
+  },
+  {
+    "name": "BOSNIAAND HERZEGOVINA",
+    "code": "31"
+  },
+  {
+    "name": "BOTSWANA",
+    "code": "32"
+  },
+  {
+    "name": "BOUVET ISLAND",
+    "code": "33"
+  },
+  {
+    "name": "BRAZIL",
+    "code": "34"
+  },
+  {
+    "name": "BRITISH INDIAN OCEAN TERRITORY",
+    "code": "35"
+  },
+  {
+    "name": "BRUNEI",
+    "code": "36"
+  },
+  {
+    "name": "BULGARIA",
+    "code": "37"
+  },
+  {
+    "name": "BURKINA FASO",
+    "code": "38"
+  },
+  {
+    "name": "BURUNDI",
+    "code": "39"
+  },
+  {
+    "name": "CAMBODIA",
+    "code": "40"
+  },
+  {
+    "name": "CAMEROON",
+    "code": "41"
+  },
+  {
+    "name": "CANADA",
+    "code": "42"
+  },
+  {
+    "name": "CAPE VERDE",
+    "code": "43"
+  },
+  {
+    "name": "CAYMAN ISLANDS",
+    "code": "44"
+  },
+  {
+    "name": "CENTRAL AFRICAN REPUBLIC",
+    "code": "45"
+  },
+  {
+    "name": "CHAD",
+    "code": "46"
+  },
+  {
+    "name": "CHILE",
+    "code": "47"
+  },
+  {
+    "name": "CHINA",
+    "code": "48"
+  },
+  {
+    "name": "CHRISTMAS ISLAND",
+    "code": "49"
+  },
+  {
+    "name": "CLIPPERTON ISLAND",
+    "code": "50"
+  },
+  {
+    "name": "COCOS (KEELING) ISLANDS",
+    "code": "51"
+  },
+  {
+    "name": "COLOMBIA",
+    "code": "52"
+  },
+  {
+    "name": "COMMONWEALTH OF PUERTO RICO",
+    "code": "53"
+  },
+  {
+    "name": "COMMONWEALTH OF THE NORTHERN MARIANA ISLANDS",
+    "code": "54"
+  },
+  {
+    "name": "COMOROS",
+    "code": "55"
+  },
+  {
+    "name": "CONGO,DEMOCRATIC REPUBLIC OF THE",
+    "code": "56"
+  },
+  {
+    "name": "CONGO,REPUBLIC OF THE",
+    "code": "57"
+  },
+  {
+    "name": "COOK ISLANDS",
+    "code": "58"
+  },
+  {
+    "name": "CORAL SEA ISLANDS",
+    "code": "59"
+  },
+  {
+    "name": "CORAL SEA ISLANDS TERRITORY",
+    "code": "60"
+  },
+  {
+    "name": "COSTA RICA",
+    "code": "61"
+  },
+  {
+    "name": "COTE D'IVOIRE",
+    "code": "62"
+  },
+  {
+    "name": "CROATIA",
+    "code": "63"
+  },
+  {
+    "name": "CUBA",
+    "code": "64"
+  },
+  {
+    "name": "CYPRUS",
+    "code": "65"
+  },
+  {
+    "name": "CZECH REPUBLIC",
+    "code": "66"
+  },
+  {
+    "name": "DENMARK",
+    "code": "67"
+  },
+  {
+    "name": "DEPARTMENTAL COLLECTIVITY OF MAYOTTE",
+    "code": "68"
+  },
+  {
+    "name": "DHEKELIA",
+    "code": "69"
+  },
+  {
+    "name": "DJIBOUTI",
+    "code": "70"
+  },
+  {
+    "name": "DOMINICA",
+    "code": "71"
+  },
+  {
+    "name": "DOMINICAN REPUBLIC",
+    "code": "72"
+  },
+  {
+    "name": "EAST TIMOR (TIMORLASTE)",
+    "code": "73"
+  },
+  {
+    "name": "ECUADOR",
+    "code": "74"
+  },
+  {
+    "name": "EGYPT",
+    "code": "75"
+  },
+  {
+    "name": "ELSALVADOR",
+    "code": "76"
+  },
+  {
+    "name": "EQUATORIAL GUINEA",
+    "code": "77"
+  },
+  {
+    "name": "ERITREA",
+    "code": "78"
+  },
+  {
+    "name": "ESTONIA",
+    "code": "79"
+  },
+  {
+    "name": "ETHIOPIA",
+    "code": "80"
+  },
+  {
+    "name": "FALKLAND ISLANDS (ISLAS MALVINAS)",
+    "code": "81"
+  },
+  {
+    "name": "FAROE ISLANDS",
+    "code": "82"
+  },
+  {
+    "name": "FIJI",
+    "code": "83"
+  },
+  {
+    "name": "FINLAND",
+    "code": "84"
+  },
+  {
+    "name": "FRANCE",
+    "code": "85"
+  },
+  {
+    "name": "FRENCH GUIANA",
+    "code": "86"
+  },
+  {
+    "name": "FRENCH POLYNESIA",
+    "code": "87"
+  },
+  {
+    "name": "FRENCH SOUTHERN ISLANDS",
+    "code": "88"
+  },
+  {
+    "name": "GABON",
+    "code": "89"
+  },
+  {
+    "name": "GEORGIA",
+    "code": "90"
+  },
+  {
+    "name": "GERMANY",
+    "code": "91"
+  },
+  {
+    "name": "GEURNSEY",
+    "code": "92"
+  },
+  {
+    "name": "GHANA",
+    "code": "93"
+  },
+  {
+    "name": "GIBRALTAR",
+    "code": "94"
+  },
+  {
+    "name": "GREECE",
+    "code": "95"
+  },
+  {
+    "name": "GREENLAND",
+    "code": "96"
+  },
+  {
+    "name": "GRENADA",
+    "code": "97"
+  },
+  {
+    "name": "GUADELOUPE",
+    "code": "98"
+  },
+  {
+    "name": "GUAM",
+    "code": "100"
+  },
+  {
+    "name": "GUATEMALA",
+    "code": "101"
+  },
+  {
+    "name": "GUERNSEY",
+    "code": "102"
+  },
+  {
+    "name": "GUINEA",
+    "code": "103"
+  },
+  {
+    "name": "GUINEABISSAU",
+    "code": "104"
+  },
+  {
+    "name": "GUYANA",
+    "code": "105"
+  },
+  {
+    "name": "HAITI",
+    "code": "106"
+  },
+  {
+    "name": "HEARD ISLAND AND MCDONALD ISLANDS",
+    "code": "107"
+  },
+  {
+    "name": "HONDURAS",
+    "code": "108"
+  },
+  {
+    "name": "HONG KONG",
+    "code": "109"
+  },
+  {
+    "name": "HOWLAND ISLAND",
+    "code": "110"
+  },
+  {
+    "name": "HUNGARY",
+    "code": "111"
+  },
+  {
+    "name": "ICELAND",
+    "code": "112"
+  },
+  {
+    "name": "INDIA",
+    "code": "113"
+  },
+  {
+    "name": "INDONESIA",
+    "code": "114"
+  },
+  {
+    "name": "IRAN",
+    "code": "115"
+  },
+  {
+    "name": "IRAQ",
+    "code": "116"
+  },
+  {
+    "name": "IRELAND",
+    "code": "117"
+  },
+  {
+    "name": "ISLE OF MAN",
+    "code": "118"
+  },
+  {
+    "name": "ISRAEL",
+    "code": "119"
+  },
+  {
+    "name": "ITALY",
+    "code": "120"
+  },
+  {
+    "name": "JAMAICA",
+    "code": "121"
+  },
+  {
+    "name": "JAN MAYEN",
+    "code": "122"
+  },
+  {
+    "name": "JAPAN",
+    "code": "123"
+  },
+  {
+    "name": "JARVIS ISLAND",
+    "code": "124"
+  },
+  {
+    "name": "JERSEY",
+    "code": "125"
+  },
+  {
+    "name": "JOHNSTON ATOLL",
+    "code": "126"
+  },
+  {
+    "name": "JORDAN",
+    "code": "127"
+  },
+  {
+    "name": "KAZAKHSTAN",
+    "code": "128"
+  },
+  {
+    "name": "KENYA",
+    "code": "129"
+  },
+  {
+    "name": "KINGMAN REEF",
+    "code": "130"
+  },
+  {
+    "name": "KIRIBATI",
+    "code": "131"
+  },
+  {
+    "name": "KOREA, NORTH",
+    "code": "132"
+  },
+  {
+    "name": "KOREA, SOUTH",
+    "code": "133"
+  },
+  {
+    "name": "KOSOVO",
+    "code": "134"
+  },
+  {
+    "name": "KUWAIT",
+    "code": "135"
+  },
+  {
+    "name": "KYRGYZSTAN",
+    "code": "136"
+  },
+  {
+    "name": "LAOS",
+    "code": "137"
+  },
+  {
+    "name": "LATVIA",
+    "code": "138"
+  },
+  {
+    "name": "LEBANON",
+    "code": "139"
+  },
+  {
+    "name": "LESOTHO",
+    "code": "140"
+  },
+  {
+    "name": "LIBERIA",
+    "code": "141"
+  },
+  {
+    "name": "LIBYA",
+    "code": "142"
+  },
+  {
+    "name": "LIECHTENSTEIN",
+    "code": "143"
+  },
+  {
+    "name": "LITHUANIA",
+    "code": "144"
+  },
+  {
+    "name": "LUXEMBOURG",
+    "code": "145"
+  },
+  {
+    "name": "MACAU",
+    "code": "146"
+  },
+  {
+    "name": "MACEDONIA",
+    "code": "147"
+  },
+  {
+    "name": "MADAGASCAR",
+    "code": "148"
+  },
+  {
+    "name": "MALAWI",
+    "code": "149"
+  },
+  {
+    "name": "MALAYSIA",
+    "code": "150"
+  },
+  {
+    "name": "MALAYSIA (LABUAN)",
+    "code": "151"
+  },
+  {
+    "name": "MALDIVES",
+    "code": "152"
+  },
+  {
+    "name": "MALI",
+    "code": "153"
+  },
+  {
+    "name": "MALTA",
+    "code": "154"
+  },
+  {
+    "name": "MARSHALLISLANDS",
+    "code": "155"
+  },
+  {
+    "name": "MARTINIQUE",
+    "code": "156"
+  },
+  {
+    "name": "MAURITANIA",
+    "code": "157"
+  },
+  {
+    "name": "MAURITIUS",
+    "code": "158"
+  },
+  {
+    "name": "MAYOTTE",
+    "code": "159"
+  },
+  {
+    "name": "UNITED MEXICAN STATES",
+    "code": "160"
+  },
+  {
+    "name": "MICRONESIA, FEDERATED STATES OF",
+    "code": "161"
+  },
+  {
+    "name": "MIDWAY ISLANDS",
+    "code": "162"
+  },
+  {
+    "name": "MOLDOVA",
+    "code": "163"
+  },
+  {
+    "name": "MONACO",
+    "code": "164"
+  },
+  {
+    "name": "MONGOLIA",
+    "code": "165"
+  },
+  {
+    "name": "MONTENEGRO",
+    "code": "166"
+  },
+  {
+    "name": "MONTSERRAT",
+    "code": "167"
+  },
+  {
+    "name": "MOROCCO",
+    "code": "168"
+  },
+  {
+    "name": "MOZAMBIQUE",
+    "code": "169"
+  },
+  {
+    "name": "MYANMAR (BURMA)",
+    "code": "170"
+  },
+  {
+    "name": "NAMIBIA",
+    "code": "171"
+  },
+  {
+    "name": "NAURU",
+    "code": "172"
+  },
+  {
+    "name": "NAVASSA ISLAND",
+    "code": "173"
+  },
+  {
+    "name": "NEPAL",
+    "code": "174"
+  },
+  {
+    "name": "NETHERLANDS",
+    "code": "175"
+  },
+  {
+    "name": "NETHERLANDS ANTILLES",
+    "code": "176"
+  },
+  {
+    "name": "NEW CALEDONIA",
+    "code": "177"
+  },
+  {
+    "name": "NEWZEALAND",
+    "code": "178"
+  },
+  {
+    "name": "NICARAGUA",
+    "code": "179"
+  },
+  {
+    "name": "NIGER",
+    "code": "180"
+  },
+  {
+    "name": "NIGERIA",
+    "code": "181"
+  },
+  {
+    "name": "NIUE",
+    "code": "182"
+  },
+  {
+    "name": "NORFOLK ISLAND",
+    "code": "183"
+  },
+  {
+    "name": "NORTHERN MARIANA ISLANDS",
+    "code": "184"
+  },
+  {
+    "name": "NORWAY",
+    "code": "185"
+  },
+  {
+    "name": "OMAN",
+    "code": "186"
+  },
+  {
+    "name": "PAKISTAN",
+    "code": "187"
+  },
+  {
+    "name": "PALAU",
+    "code": "188"
+  },
+  {
+    "name": "PALMYRA ATOLL",
+    "code": "189"
+  },
+  {
+    "name": "PANAMA",
+    "code": "190"
+  },
+  {
+    "name": "PAPUA NEW GUINEA",
+    "code": "191"
+  },
+  {
+    "name": "PARACEL ISLANDS",
+    "code": "192"
+  },
+  {
+    "name": "PARAGUAY",
+    "code": "193"
+  },
+  {
+    "name": "PERU",
+    "code": "194"
+  },
+  {
+    "name": "PHILIPPINES",
+    "code": "195"
+  },
+  {
+    "name": "PITCAIRN ISLANDS",
+    "code": "196"
+  },
+  {
+    "name": "PITCAIRN, HENDERSON, DUCIE, AND OENO ISLANDS",
+    "code": "197"
+  },
+  {
+    "name": "POLAND",
+    "code": "198"
+  },
+  {
+    "name": "PORTUGAL",
+    "code": "199"
+  },
+  {
+    "name": "PUERTO RICO",
+    "code": "200"
+  },
+  {
+    "name": "QATAR",
+    "code": "201"
+  },
+  {
+    "name": "REUNION",
+    "code": "202"
+  },
+  {
+    "name": "ROMANIA",
+    "code": "203"
+  },
+  {
+    "name": "RUSSIA",
+    "code": "204"
+  },
+  {
+    "name": "RWANDA",
+    "code": "205"
+  },
+  {
+    "name": "SAINT BARTHELEMY",
+    "code": "206"
+  },
+  {
+    "name": "SAINT HELENA",
+    "code": "207"
+  },
+  {
+    "name": "SAINT KITTS AND NEVIS",
+    "code": "208"
+  },
+  {
+    "name": "SAINT LUCIA",
+    "code": "209"
+  },
+  {
+    "name": "SAINT MARTIN",
+    "code": "210"
+  },
+  {
+    "name": "SAINT PIERRE AND MIQUELON",
+    "code": "211"
+  },
+  {
+    "name": "SAINT VINCENT AND THE GRENADINES",
+    "code": "212"
+  },
+  {
+    "name": "SAMOA",
+    "code": "213"
+  },
+  {
+    "name": "SANMARINO",
+    "code": "214"
+  },
+  {
+    "name": "SAO TOME AND PRINCIPE",
+    "code": "215"
+  },
+  {
+    "name": "SAUDI ARABIA",
+    "code": "216"
+  },
+  {
+    "name": "SENEGAL",
+    "code": "217"
+  },
+  {
+    "name": "SERBIA",
+    "code": "218"
+  },
+  {
+    "name": "SEYCHELLES",
+    "code": "219"
+  },
+  {
+    "name": "SIERRA LEONE",
+    "code": "220"
+  },
+  {
+    "name": "SINGAPORE",
+    "code": "221"
+  },
+  {
+    "name": "SLOVAKIA",
+    "code": "222"
+  },
+  {
+    "name": "SLOVENIA",
+    "code": "223"
+  },
+  {
+    "name": "SOLOMON ISLANDS",
+    "code": "224"
+  },
+  {
+    "name": "SOMALIA",
+    "code": "225"
+  },
+  {
+    "name": "SOUTH AFRICA",
+    "code": "226"
+  },
+  {
+    "name": "SOUTH GEORGIA AND SOUTH SANDWICH ISLANDS",
+    "code": "227"
+  },
+  {
+    "name": "SPRATLY ISLANDS",
+    "code": "228"
+  },
+  {
+    "name": "SPAIN",
+    "code": "229"
+  },
+  {
+    "name": "SRI LANKA",
+    "code": "230"
+  },
+  {
+    "name": "ST. VINCENT & GRENADINES",
+    "code": "231"
+  },
+  {
+    "name": "SUDAN",
+    "code": "232"
+  },
+  {
+    "name": "SURINAME",
+    "code": "233"
+  },
+  {
+    "name": "SVALBARD",
+    "code": "234"
+  },
+  {
+    "name": "SWAZILAND",
+    "code": "235"
+  },
+  {
+    "name": "SWEDEN",
+    "code": "236"
+  },
+  {
+    "name": "SWITZERLAND",
+    "code": "237"
+  },
+  {
+    "name": "SYRIA",
+    "code": "238"
+  },
+  {
+    "name": "TAIWAN",
+    "code": "239"
+  },
+  {
+    "name": "TAJIKISTAN",
+    "code": "240"
+  },
+  {
+    "name": "TANZANIA",
+    "code": "241"
+  },
+  {
+    "name": "TERRITORIAL COLLECTIVITY OF ST. PIERRE & MIQUELON",
+    "code": "242"
+  },
+  {
+    "name": "TERRITORY OF AMERICAN SAMOA",
+    "code": "243"
+  },
+  {
+    "name": "TERRITORY OF ASHMORE AND CARTIER ISLANDS",
+    "code": "244"
+  },
+  {
+    "name": "TERRITORY OF CHRISTMAS ISLAND",
+    "code": "245"
+  },
+  {
+    "name": "TERRITORY OF COCOS (KEELING) ISLANDS",
+    "code": "246"
+  },
+  {
+    "name": "TERRITORY OF GUAM",
+    "code": "247"
+  },
+  {
+    "name": "TERRITORY OF HEARD ISLAND & MCDONALD ISLANDS",
+    "code": "248"
+  },
+  {
+    "name": "TERRITORY OF NORFOLK ISLAND",
+    "code": "249"
+  },
+  {
+    "name": "THAILAND",
+    "code": "250"
+  },
+  {
+    "name": "THE BAHAMAS",
+    "code": "251"
+  },
+  {
+    "name": "THE GAMBIA",
+    "code": "252"
+  },
+  {
+    "name": "TOGO",
+    "code": "253"
+  },
+  {
+    "name": "TOKELAU",
+    "code": "254"
+  },
+  {
+    "name": "TONGA",
+    "code": "255"
+  },
+  {
+    "name": "TRINIDAD AND TOBAGO",
+    "code": "256"
+  },
+  {
+    "name": "TUNISIA",
+    "code": "257"
+  },
+  {
+    "name": "TURKEY",
+    "code": "258"
+  },
+  {
+    "name": "TURKMENISTAN",
+    "code": "259"
+  },
+  {
+    "name": "TURKS AND CAICOS ISLANDS",
+    "code": "260"
+  },
+  {
+    "name": "TUVALU",
+    "code": "261"
+  },
+  {
+    "name": "UGANDA",
+    "code": "262"
+  },
+  {
+    "name": "UKRAINE",
+    "code": "263"
+  },
+  {
+    "name": "UNITED ARAB EMIRATES",
+    "code": "264"
+  },
+  {
+    "name": "UNITED KINGDOM",
+    "code": "265"
+  },
+  {
+    "name": "UNITED STATES VIRGIN ISLANDS",
+    "code": "266"
+  },
+  {
+    "name": "UNITED STATES OF AMERICA",
+    "code": "267"
+  },
+  {
+    "name": "URUGUAY",
+    "code": "268"
+  },
+  {
+    "name": "UZBEKISTAN",
+    "code": "269"
+  },
+  {
+    "name": "VANUATU",
+    "code": "270"
+  },
+  {
+    "name": "VATICAN CITY (HOLYSEE)",
+    "code": "271"
+  },
+  {
+    "name": "VENEZUELA",
+    "code": "272"
+  },
+  {
+    "name": "VIETNAM",
+    "code": "273"
+  },
+  {
+    "name": "VIRGIN ISLANDS, BRITISH",
+    "code": "274"
+  },
+  {
+    "name": "VIRGIN ISLANDS, U.S.",
+    "code": "275"
+  },
+  {
+    "name": "WAKE ISLAND",
+    "code": "276"
+  },
+  {
+    "name": "WALLIS AND FUTUNA",
+    "code": "277"
+  },
+  {
+    "name": "WESTERN SAHARA",
+    "code": "278"
+  },
+  {
+    "name": "YEMEN",
+    "code": "279"
+  },
+  {
+    "name": "ZAMBIA",
+    "code": "280"
+  },
+  {
+    "name": "ZIMBABWE",
+    "code": "281"
+  },
+  {
+    "name": "COMBODIA",
+    "code": "282"
+  },
+  {
+    "name": "CONGO",
+    "code": "283"
+  },
+  {
+    "name": "IVORY COAST",
+    "code": "284"
+  },
+  {
+    "name": "WEST INDIES",
+    "code": "285"
+  },
+  {
+    "name": "BRITISH VIRGIN ISLANDS",
+    "code": "286"
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Civil",
+    "code": "01"
+  },
+  {
+    "name": "Railway",
+    "code": "02"
+  },
+  {
+    "name": "Defence",
+    "code": "03"
+  },
+  {
+    "name": "Telecommunication",
+    "code": "04"
+  },
+  {
+    "name": "Post",
+    "code": "05"
+  }
+]

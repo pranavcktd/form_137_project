@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Addition of new DDO detail mapping",
+    "code": "A"
+  },
+  {
+    "name": "Deletion of DDO detail mapping",
+    "code": "D"
+  },
+  {
+    "name": "Update of existing DDO detail mapping",
+    "code": "U"
+  }
+]

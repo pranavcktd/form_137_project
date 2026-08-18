@@ -1,0 +1,218 @@
+[
+  {
+    "name": "Agriculture",
+    "code": "01"
+  },
+  {
+    "name": "Atomic Energy",
+    "code": "02"
+  },
+  {
+    "name": "Fertilizers",
+    "code": "03"
+  },
+  {
+    "name": "Chemicals & Petrochemicals",
+    "code": "04"
+  },
+  {
+    "name": "Civil Aviation & Tourism",
+    "code": "05"
+  },
+  {
+    "name": "Coal",
+    "code": "06"
+  },
+  {
+    "name": "Consumer Affairs, Food & Public Distribution",
+    "code": "07"
+  },
+  {
+    "name": "Commerce & Textiles",
+    "code": "08"
+  },
+  {
+    "name": "Environment & Forest and Ministry of Earth Science",
+    "code": "09"
+  },
+  {
+    "name": "External affairs and Overseas Indian affairs",
+    "code": "10"
+  },
+  {
+    "name": "Finance",
+    "code": "11"
+  },
+  {
+    "name": "Central Board of Direct Taxes",
+    "code": "12"
+  },
+  {
+    "name": "Central Board of Excise and Customs",
+    "code": "13"
+  },
+  {
+    "name": "Controller of Aid Accounts and Audit",
+    "code": "14"
+  },
+  {
+    "name": "Central Pension Accounting Office",
+    "code": "15"
+  },
+  {
+    "name": "Food Processing Industries",
+    "code": "16"
+  },
+  {
+    "name": "Health and Family Welfare",
+    "code": "17"
+  },
+  {
+    "name": "Home Affairs and development of North Eastern Region",
+    "code": "18"
+  },
+  {
+    "name": "Human Resource Development",
+    "code": "19"
+  },
+  {
+    "name": "Industry",
+    "code": "20"
+  },
+  {
+    "name": "Information and Broadcasting",
+    "code": "21"
+  },
+  {
+    "name": "Telecommunication and Information Technology",
+    "code": "22"
+  },
+  {
+    "name": "Labour",
+    "code": "23"
+  },
+  {
+    "name": "Law and Justice and Company Affairs",
+    "code": "24"
+  },
+  {
+    "name": "Personnel, Public Grievances and Pensions",
+    "code": "25"
+  },
+  {
+    "name": "Petroleum and Natural Gas",
+    "code": "26"
+  },
+  {
+    "name": "Planning, Statistics and Programme Implementation",
+    "code": "27"
+  },
+  {
+    "name": "Power",
+    "code": "28"
+  },
+  {
+    "name": "New and Renewable Energy",
+    "code": "29"
+  },
+  {
+    "name": "Rural Development and Panchayati Raj",
+    "code": "30"
+  },
+  {
+    "name": "Science and Technology",
+    "code": "31"
+  },
+  {
+    "name": "Space",
+    "code": "32"
+  },
+  {
+    "name": "Steel",
+    "code": "33"
+  },
+  {
+    "name": "Mines",
+    "code": "34"
+  },
+  {
+    "name": "Social Justice and Empowerment",
+    "code": "35"
+  },
+  {
+    "name": "Tribal Affairs",
+    "code": "36"
+  },
+  {
+    "name": "D/o of Commerce (Supply Division)",
+    "code": "37"
+  },
+  {
+    "name": "Shipping and Road Transport and Highways",
+    "code": "38"
+  },
+  {
+    "name": "Urban Development, Urban Employment and Povery Alleviation",
+    "code": "39"
+  },
+  {
+    "name": "Water Resources",
+    "code": "40"
+  },
+  {
+    "name": "President's Secretariat",
+    "code": "41"
+  },
+  {
+    "name": "Lok Sabha Secretariat",
+    "code": "42"
+  },
+  {
+    "name": "Rajya Sabha Secretariat",
+    "code": "43"
+  },
+  {
+    "name": "Election Commision",
+    "code": "44"
+  },
+  {
+    "name": "Andaman and Nicobar Islands Administration",
+    "code": "45"
+  },
+  {
+    "name": "Chandigarh Administration",
+    "code": "46"
+  },
+  {
+    "name": "Dadra and Nagar Haveli",
+    "code": "47"
+  },
+  {
+    "name": "Goa, Daman and Diu",
+    "code": "48"
+  },
+  {
+    "name": "Lakshwadeep",
+    "code": "49"
+  },
+  {
+    "name": "Pondicherry Administration",
+    "code": "50"
+  },
+  {
+    "name": "Pay and Account Officers (Audit)",
+    "code": "51"
+  },
+  {
+    "name": "Non-conventional energy sources",
+    "code": "52"
+  },
+  {
+    "name": "Government of NCT of Delhi",
+    "code": "53"
+  },
+  {
+    "name": "Others",
+    "code": "99"
+  }
+]

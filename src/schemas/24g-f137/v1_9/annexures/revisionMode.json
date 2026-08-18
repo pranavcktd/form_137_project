@@ -1,0 +1,5 @@
+[
+  { "name": "Addition of new DDO record", "code": "N" },
+  { "name": "Deletion of DDO record", "code": "D" },
+  { "name": "Update of DDO record", "code": "U" }
+]

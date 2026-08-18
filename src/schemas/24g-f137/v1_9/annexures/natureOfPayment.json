@@ -1,0 +1,152 @@
+[
+  {
+    "name": "Payments made to Govt. Employees",
+    "sectionCode": "192",
+    "formCode": "24Q"
+  },
+  {
+    "name": "Interest of Securities",
+    "sectionCode": "193",
+    "formCode": "26Q"
+  },
+  {
+    "name": "Dividends",
+    "sectionCode": "194",
+    "formCode": "26Q"
+  },
+  {
+    "name": "Interest other than 'Interest on securities'",
+    "sectionCode": "194A",
+    "formCode": "26Q"
+  },
+  {
+    "name": "Winning from lotter and Crossword puzzle",
+    "sectionCode": "194B",
+    "formCode": "26Q"
+  },
+  {
+    "name": "Winning from horse race",
+    "sectionCode": "194BB",
+    "formCode": "26Q"
+  },
+  {
+    "name": "Payments to Contractors and sub-contractors",
+    "sectionCode": "194C",
+    "formCode": "26Q"
+  },
+  {
+    "name": "Insurance commission",
+    "sectionCode": "194D",
+    "formCode": "26Q"
+  },
+  {
+    "name": "Payments in respect of deposits under National Savings Scheme",
+    "sectionCode": "194EE",
+    "formCode": "26Q"
+  },
+  {
+    "name": "Payments on account of re-purchase of Units by Mutual fund or Unit Trust of India",
+    "sectionCode": "194F",
+    "formCode": "26Q"
+  },
+  {
+    "name": "Commision, price etc. on sale of lottery tickets",
+    "sectionCode": "194G",
+    "formCode": "26Q"
+  },
+  {
+    "name": "Commisiion or brokerage",
+    "sectionCode": "194H",
+    "formCode": "26Q"
+  },
+  {
+    "name": "Rent",
+    "sectionCode": "194I",
+    "formCode": "26Q"
+  },
+  {
+    "name": "Fees for professional or technical services",
+    "sectionCode": "194J",
+    "formCode": "26Q"
+  },
+  {
+    "name": "Payment of compensation on acquisition of certain immovable property",
+    "sectionCode": "194LA",
+    "formCode": "26Q"
+  },
+  {
+    "name": "Payments to non-resident sportsmen or sports associations",
+    "sectionCode": "194E",
+    "formCode": "27Q"
+  },
+  {
+    "name": "Others sums payable to non-residents",
+    "sectionCode": "195",
+    "formCode": "27Q"
+  },
+  {
+    "name": "Income in respect of units of non-residents",
+    "sectionCode": "196A",
+    "formCode": "27Q"
+  },
+  {
+    "name": "Payments in respect of units to an offshore fund",
+    "sectionCode": "196B",
+    "formCode": "27Q"
+  },
+  {
+    "name": "Income from foreign currency bonds or shares of indian company payable to non-residents",
+    "sectionCode": "196C",
+    "formCode": "27Q"
+  },
+  {
+    "name": "Income of foreign institutional investors from securities",
+    "sectionCode": "196D",
+    "formCode": "27Q"
+  },
+  {
+    "name": "Collection at source from alcoholic liquor for human consumption",
+    "sectionCode": "206CA",
+    "formCode": "27EQ"
+  },
+  {
+    "name": "Collection at source from timber obtained under forest lease",
+    "sectionCode": "206CB",
+    "formCode": "27EQ"
+  },
+  {
+    "name": "Collection at source from timber obtained by any mode other than a forest lease",
+    "sectionCode": "206CC",
+    "formCode": "27EQ"
+  },
+  {
+    "name": "Collection at source from any other forest produce (not being tendu leaves)",
+    "sectionCode": "206CD",
+    "formCode": "27EQ"
+  },
+  {
+    "name": "Collection at source from any scrap",
+    "sectionCode": "206CE",
+    "formCode": "27EQ"
+  },
+  {
+    "name": "Collection at source from contractors or licensee or lease relating to parking lots",
+    "sectionCode": "206CF",
+    "formCode": "27EQ"
+  },
+  {
+    "name": "Collection at source from contractors or licensee or lease relating to toll plaza",
+    "sectionCode": "206CG",
+    "formCode": "27EQ"
+  },
+  {
+    "name": "Collection at source from contractors or licensee or lease relating to mine or quarry",
+    "sectionCode": "206CH",
+    "formCode": "27EQ"
+  },
+  {
+    "name": "Collection at source from tendu Leaves",
+    "sectionCode": "206CI",
+    "formCode": "27EQ"
+  }
+]
