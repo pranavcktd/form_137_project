@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import { formTypeLabel } from "@/lib/formTypeLabels";
 
 export interface SummaryReportInput {
   client: { departmentName: string; ain: string };
@@ -39,7 +40,7 @@ export async function generateSummaryReport(input: SummaryReportInput): Promise<
   let totalRemitted = 0;
   for (const r of ddoRecords) {
     const difference = Math.round((r.taxDeducted - r.totalRemitted) * 100) / 100;
-    summary.addRow([r.tan, r.name, r.formType ?? "", r.taxDeducted, r.totalRemitted, difference]);
+    summary.addRow([r.tan, r.name, formTypeLabel(r.formType), r.taxDeducted, r.totalRemitted, difference]);
     totalDeducted += r.taxDeducted;
     totalRemitted += r.totalRemitted;
   }
@@ -55,10 +56,10 @@ export async function generateSummaryReport(input: SummaryReportInput): Promise<
   ]);
   totalRow.font = { bold: true };
 
-  summary.columns = [{ width: 14 }, { width: 30 }, { width: 12 }, { width: 16 }, { width: 16 }, { width: 14 }];
+  summary.columns = [{ width: 14 }, { width: 30 }, { width: 44 }, { width: 16 }, { width: 16 }, { width: 14 }];
 
   const byFormType = workbook.addWorksheet("By Form Type");
-  byFormType.addRow(["Form Type", "Count", "Total Deducted", "Total Remitted"]);
+  byFormType.addRow(["Form Type", "Count", "Total Deducted", "Total Remitted", "Difference"]);
   byFormType.getRow(1).font = { bold: true };
 
   const totals = new Map<string, { count: number; deducted: number; remitted: number }>();
@@ -71,14 +72,17 @@ export async function generateSummaryReport(input: SummaryReportInput): Promise<
     totals.set(key, entry);
   }
   for (const [formType, entry] of totals) {
+    const deducted = Math.round(entry.deducted * 100) / 100;
+    const remitted = Math.round(entry.remitted * 100) / 100;
     byFormType.addRow([
-      formType,
+      formType === "(none)" ? formType : formTypeLabel(formType),
       entry.count,
-      Math.round(entry.deducted * 100) / 100,
-      Math.round(entry.remitted * 100) / 100,
+      deducted,
+      remitted,
+      Math.round((deducted - remitted) * 100) / 100,
     ]);
   }
-  byFormType.columns = [{ width: 14 }, { width: 10 }, { width: 16 }, { width: 16 }];
+  byFormType.columns = [{ width: 44 }, { width: 10 }, { width: 16 }, { width: 16 }, { width: 14 }];
 
   const buffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(buffer);

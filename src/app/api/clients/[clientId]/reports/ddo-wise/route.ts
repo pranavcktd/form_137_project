@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { prisma } from "@/lib/prisma";
 import { requireClient } from "@/lib/authz";
+import { formTypeLabel } from "@/lib/formTypeLabels";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -56,13 +57,13 @@ export async function GET(
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("DDO-wise Entries");
   sheet.addRow([
-    "TAN", "DDO Name", "FY", "Month", "Statement Type", "Form Type", "Tax Deducted", "Total Remitted",
+    "TAN", "DDO Name", "FY", "Month", "Statement Type", "Form Type", "Tax Deducted", "Total Remitted", "Difference",
   ]);
   sheet.getRow(1).font = { bold: true };
 
   for (const ddo of rows) {
     if (ddo.transactions.length === 0) {
-      sheet.addRow([ddo.tan, ddo.name, "", "", "", "", "", ""]);
+      sheet.addRow([ddo.tan, ddo.name, "", "", "", "", "", "", ""]);
       continue;
     }
     for (const t of ddo.transactions) {
@@ -72,14 +73,15 @@ export async function GET(
         `${t.financialYear}-${String((t.financialYear + 1) % 100).padStart(2, "0")}`,
         MONTHS[t.month - 1],
         t.statementType,
-        t.formType ?? "",
+        formTypeLabel(t.formType),
         t.taxDeducted,
         t.totalRemitted,
+        Math.round((t.taxDeducted - t.totalRemitted) * 100) / 100,
       ]);
     }
   }
   sheet.columns = [
-    { width: 14 }, { width: 28 }, { width: 10 }, { width: 12 }, { width: 14 }, { width: 10 }, { width: 14 }, { width: 14 },
+    { width: 14 }, { width: 28 }, { width: 10 }, { width: 12 }, { width: 14 }, { width: 44 }, { width: 14 }, { width: 14 }, { width: 14 },
   ];
 
   const buffer = await workbook.xlsx.writeBuffer();

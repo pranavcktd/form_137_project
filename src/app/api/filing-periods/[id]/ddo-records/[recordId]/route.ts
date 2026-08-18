@@ -73,6 +73,22 @@ export async function DELETE(
       { status: 403 },
     );
   }
+  // Receipt/acknowledgement fields record what was actually uploaded to the
+  // government portal, and stay editable independent of the DDO lock — so
+  // a record can be deleted here even after the return was acknowledged.
+  // Require the receipt to be cleared first as a deliberate, visible step.
+  if (filingPeriod.receiptNumber || filingPeriod.receiptDate) {
+    return NextResponse.json(
+      {
+        error: {
+          formErrors: [
+            "This return already has a Receipt/Acknowledgement Number and Date recorded. Clear those fields first if you still want to delete records.",
+          ],
+        },
+      },
+      { status: 403 },
+    );
+  }
 
   const existing = await prisma.ddoRecord.findFirst({
     where: { id: recordId, filingPeriodId: id },

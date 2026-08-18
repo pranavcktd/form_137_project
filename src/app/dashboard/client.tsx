@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Badge, Card, EmptyState, FieldLabel, LoadingState, inputClass } from "@/components/ui";
+import { Badge, Card, EmptyState, FieldLabel, LoadingState, Pagination, inputClass } from "@/components/ui";
 import { listFinancialYears, currentFinancialYear } from "@/lib/financialYear";
+import { usePagination } from "@/lib/usePagination";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -44,6 +45,7 @@ export function ComplianceDashboardClient() {
   }, [financialYear, month]);
 
   const loading = rows === null;
+  const rowsPage = usePagination(rows ?? [], undefined, `${financialYear}::${month}`);
 
   return (
     <div>
@@ -83,7 +85,7 @@ export function ComplianceDashboardClient() {
       ) : (
         <Card className="mt-6 divide-y divide-slate-100">
           {rows.length === 0 && <EmptyState>No clients yet.</EmptyState>}
-          {rows.map((row) => (
+          {rowsPage.pageItems.map((row) => (
             <div key={row.clientId} className="flex items-center justify-between p-4">
               <div>
                 <p className="font-medium text-slate-900">{row.departmentName}</p>
@@ -115,6 +117,13 @@ export function ComplianceDashboardClient() {
               </div>
             </div>
           ))}
+          <Pagination
+            page={rowsPage.page}
+            totalPages={rowsPage.totalPages}
+            onPageChange={rowsPage.setPage}
+            totalItems={rowsPage.totalItems}
+            pageSize={rowsPage.pageSize}
+          />
         </Card>
       )}
     </div>

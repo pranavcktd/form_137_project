@@ -5,8 +5,10 @@ import ministries from "@/schemas/24g-f137/v1_9/annexures/ministry.json";
 import subMinistries from "@/schemas/24g-f137/v1_9/annexures/subMinistry.json";
 import countries from "@/schemas/24g-f137/v1_9/annexures/country.json";
 import { FieldLabel, inputClass } from "@/components/ui";
+import { APPLICATION_TYPES } from "@/lib/applicationTypes";
 
 export type ClientProfileValues = {
+  enabledReturnTypes: string[];
   ain: string;
   tan: string;
   ministryName: string;
@@ -34,6 +36,7 @@ export type ClientProfileValues = {
 
 export function clientProfileDefaults(): ClientProfileValues {
   return {
+    enabledReturnTypes: ["FORM137"],
     ain: "",
     tan: "",
     ministryName: "",
@@ -78,17 +81,59 @@ function Field({
 export function ClientProfileFields({
   values,
   onChange,
+  availableReturnTypes,
 }: {
   values: ClientProfileValues;
   onChange: (values: ClientProfileValues) => void;
+  /** Return types the firm's own subscription covers — a client can only be set up for a subset of these. */
+  availableReturnTypes: string[];
 }) {
   const set = <K extends keyof ClientProfileValues>(
     key: K,
     value: ClientProfileValues[K],
   ) => onChange({ ...values, [key]: value });
 
+  const toggleReturnType = (key: string) =>
+    set(
+      "enabledReturnTypes",
+      values.enabledReturnTypes.includes(key)
+        ? values.enabledReturnTypes.filter((k) => k !== key)
+        : [...values.enabledReturnTypes, key],
+    );
+
   return (
     <div className="space-y-8">
+      <div>
+        <h3 className="mb-3 text-sm font-semibold text-slate-900">Return Types</h3>
+        <p className="mb-2 text-sm text-slate-500">
+          Which returns does this client need filed? Only what your firm is subscribed to is
+          selectable here.
+        </p>
+        <div className="space-y-2">
+          {APPLICATION_TYPES.map((app) => {
+            const available = availableReturnTypes.includes(app.key);
+            return (
+              <label
+                key={app.key}
+                className={`flex items-start gap-2 text-sm ${available ? "text-slate-700" : "text-slate-400"}`}
+              >
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  disabled={!available}
+                  checked={values.enabledReturnTypes.includes(app.key)}
+                  onChange={() => toggleReturnType(app.key)}
+                />
+                <span>
+                  <span className="font-medium">{app.label}</span>
+                  {!available && <span className="ml-2 text-xs">(not in your firm's subscription)</span>}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
       <div>
         <h3 className="mb-3 text-sm font-semibold text-slate-900">
           Accounts Office Details

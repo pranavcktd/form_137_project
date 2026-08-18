@@ -9,8 +9,10 @@ import {
   EmptyState,
   FieldLabel,
   LoadingState,
+  Pagination,
   inputClass,
 } from "@/components/ui";
+import { usePagination } from "@/lib/usePagination";
 import type { DdoMasterFormInput } from "@/lib/validation/ddoMaster";
 import type { DdoMasterImportRow } from "@/lib/excel/parseDdoMasterImport";
 
@@ -136,6 +138,8 @@ export function DdoMasterListClient({ clientId }: { clientId: string }) {
         ].some((field) => (field ?? "").toLowerCase().includes(searchTerm)),
       )
     : ddoMasters;
+
+  const mastersPage = usePagination(filteredMasters, undefined, search);
 
   const set = <K extends keyof DdoMasterFormInput>(key: K, value: DdoMasterFormInput[K]) =>
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -592,7 +596,7 @@ export function DdoMasterListClient({ clientId }: { clientId: string }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredMasters.map((ddo) => (
+              {mastersPage.pageItems.map((ddo) => (
                 <tr key={ddo.id}>
                   <td className="px-4 py-2 font-medium text-slate-900">{ddo.tan}</td>
                   <td className="px-4 py-2 text-slate-700">{ddo.name}</td>
@@ -617,6 +621,13 @@ export function DdoMasterListClient({ clientId }: { clientId: string }) {
             </tbody>
           </table>
         )}
+        <Pagination
+          page={mastersPage.page}
+          totalPages={mastersPage.totalPages}
+          onPageChange={mastersPage.setPage}
+          totalItems={mastersPage.totalItems}
+          pageSize={mastersPage.pageSize}
+        />
       </Card>
     </div>
   );

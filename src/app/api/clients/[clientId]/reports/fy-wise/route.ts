@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 import { prisma } from "@/lib/prisma";
 import { requireClient } from "@/lib/authz";
 import { currentFinancialYear } from "@/lib/financialYear";
+import { formTypeLabel } from "@/lib/formTypeLabels";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -50,7 +51,7 @@ export async function GET(
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet(`FY ${financialYear}-${String((financialYear + 1) % 100).padStart(2, "0")}`);
-  sheet.addRow(["Month", "Statement Type", "TAN", "DDO Name", "Form Type", "Tax Deducted", "Total Remitted"]);
+  sheet.addRow(["Month", "Statement Type", "TAN", "DDO Name", "Form Type", "Tax Deducted", "Total Remitted", "Difference"]);
   sheet.getRow(1).font = { bold: true };
   for (const r of rows) {
     sheet.addRow([
@@ -58,12 +59,15 @@ export async function GET(
       r.statementType,
       r.tan,
       r.name,
-      r.formType ?? "",
+      formTypeLabel(r.formType),
       r.taxDeducted,
       r.totalRemitted,
+      Math.round((r.taxDeducted - r.totalRemitted) * 100) / 100,
     ]);
   }
-  sheet.columns = [{ width: 12 }, { width: 14 }, { width: 14 }, { width: 28 }, { width: 10 }, { width: 14 }, { width: 14 }];
+  sheet.columns = [
+    { width: 12 }, { width: 14 }, { width: 14 }, { width: 28 }, { width: 44 }, { width: 14 }, { width: 14 }, { width: 14 },
+  ];
 
   const buffer = await workbook.xlsx.writeBuffer();
   return new NextResponse(new Uint8Array(buffer), {

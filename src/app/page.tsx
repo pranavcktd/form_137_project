@@ -5,48 +5,78 @@ import { prisma } from "@/lib/prisma";
 import { AppShell } from "@/components/app-shell";
 import { Badge, Card, PageHeader } from "@/components/ui";
 import { FvuVersionBanner } from "@/components/fvu-version-banner";
+import { applicationTypeLabel } from "@/lib/applicationTypes";
 
-const SERVICES = [
+const PRODUCTS = [
   {
-    key: "form137",
-    title: "Form 137 / 24G",
-    subtitle: "Book Adjustment Monthly Statement",
-    description:
-      "Prepare, validate, and generate Form 137 (Form 24G) e-filing returns for your clients.",
-    href: "/clients",
-    active: true,
+    application: "FORM137",
+    name: "Nex IT",
+    tagline: "Income Tax filings",
+    services: [
+      {
+        key: "form137",
+        title: "Form 137 / 24G",
+        subtitle: "Book Adjustment Monthly Statement",
+        description:
+          "Prepare, validate, and generate Form 137 (Form 24G) e-filing returns for your clients.",
+        href: "/clients",
+        built: true,
+      },
+    ],
   },
   {
-    key: "form138",
-    title: "Form 138 (24Q)",
-    subtitle: "Salary TDS Return",
-    description: "Quarterly TDS return for salary payments.",
-    href: null,
-    active: false,
+    application: "TDS",
+    name: "Nex TDS",
+    tagline: "Quarterly TDS/TCS returns",
+    services: [
+      {
+        key: "form138",
+        title: "Form 138 (24Q)",
+        subtitle: "Salary TDS Return",
+        description: "Quarterly TDS return for salary payments.",
+        href: null,
+        built: false,
+      },
+      {
+        key: "form140",
+        title: "Form 140 (26Q)",
+        subtitle: "Non-Salary TDS Return",
+        description: "Quarterly TDS return for payments other than salary.",
+        href: null,
+        built: false,
+      },
+      {
+        key: "form144",
+        title: "Form 144 (27Q)",
+        subtitle: "Payments to Non-Residents",
+        description: "Quarterly TDS return for payments to non-residents.",
+        href: null,
+        built: false,
+      },
+      {
+        key: "form143",
+        title: "Form 143 (27EQ)",
+        subtitle: "TCS Return",
+        description: "Quarterly Tax Collected at Source return.",
+        href: null,
+        built: false,
+      },
+    ],
   },
   {
-    key: "form140",
-    title: "Form 140 (26Q)",
-    subtitle: "Non-Salary TDS Return",
-    description: "Quarterly TDS return for payments other than salary.",
-    href: null,
-    active: false,
-  },
-  {
-    key: "form144",
-    title: "Form 144 (27Q)",
-    subtitle: "Payments to Non-Residents",
-    description: "Quarterly TDS return for payments to non-residents.",
-    href: null,
-    active: false,
-  },
-  {
-    key: "form143",
-    title: "Form 143 (27EQ)",
-    subtitle: "TCS Return",
-    description: "Quarterly Tax Collected at Source return.",
-    href: null,
-    active: false,
+    application: "GST",
+    name: "Nex GST",
+    tagline: "GST return filing",
+    services: [
+      {
+        key: "gst",
+        title: "GST Returns",
+        subtitle: "Coming soon",
+        description: "GST return preparation and filing.",
+        href: null,
+        built: false,
+      },
+    ],
   },
 ] as const;
 
@@ -54,6 +84,12 @@ const QUICK_LINKS = [
   { href: "/clients", label: "Clients", description: "Manage your clients and their profiles" },
   { href: "/dashboard", label: "Compliance Dashboard", description: "Filing status across all clients" },
 ] as const;
+
+const ADMIN_QUICK_LINK = {
+  href: "/team",
+  label: "Team",
+  description: "Manage your firm's own users — view, edit, disable, reset passwords",
+} as const;
 
 export default async function Home() {
   const session = await auth();
@@ -63,10 +99,12 @@ export default async function Home() {
     redirect("/admin");
   }
 
-  const [organization, clientCount] = await Promise.all([
+  const [organization, clientCount, platformSettings] = await Promise.all([
     prisma.organization.findUnique({ where: { id: session.user.organizationId } }),
     prisma.client.count({ where: { organizationId: session.user.organizationId } }),
+    prisma.platformSettings.findUnique({ where: { id: "singleton" } }),
   ]);
+  const hideUnsubscribedModules = platformSettings?.hideUnsubscribedModules ?? false;
 
   return (
     <AppShell firmName={organization?.name}>
@@ -76,8 +114,35 @@ export default async function Home() {
         actions={<FvuVersionBanner />}
       />
 
+      {organization && (
+        <Card className="mt-6 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">{organization.name}</p>
+              <p className="mt-1 text-sm text-slate-500">
+                Subscribed to: {organization.enabledApplications.map(applicationTypeLabel).join(", ")}
+              </p>
+              {organization.subscriptionEndDate && (
+                <p className="mt-0.5 text-xs text-slate-400">
+                  Subscription valid through{" "}
+                  {new Date(organization.subscriptionEndDate).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge tone={organization.status === "ACTIVE" ? "green" : "red"}>
+                {organization.status === "ACTIVE" ? "Active" : "Disabled"}
+              </Badge>
+              <Link href="/profile" className="text-sm text-indigo-600 hover:underline">
+                My Profile &rarr;
+              </Link>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {QUICK_LINKS.map((link) => (
+        {(session.user.role === "ADMIN" ? [...QUICK_LINKS, ADMIN_QUICK_LINK] : QUICK_LINKS).map((link) => (
           <Link key={link.href} href={link.href}>
             <Card className="flex items-center justify-between p-4 transition-colors hover:border-indigo-200 hover:bg-indigo-50/40">
               <div>
@@ -92,46 +157,63 @@ export default async function Home() {
         ))}
       </div>
 
-      <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-slate-500">
-        Services
-      </h2>
-      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {SERVICES.map((service) =>
-          service.active && service.href ? (
-            <Link key={service.key} href={service.href}>
-              <Card className="h-full p-5 transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
-                <div className="flex items-start justify-between">
-                  <h2 className="font-semibold text-slate-900">
-                    {service.title}
-                  </h2>
-                  <Badge tone="green">Active</Badge>
-                </div>
-                <p className="mt-1 text-sm font-medium text-indigo-600">
-                  {service.subtitle}
-                </p>
-                <p className="mt-2 text-sm text-slate-500">
-                  {service.description}
-                </p>
-              </Card>
-            </Link>
-          ) : (
-            <Card key={service.key} className="h-full p-5 opacity-60">
-              <div className="flex items-start justify-between">
-                <h2 className="font-semibold text-slate-900">
-                  {service.title}
-                </h2>
-                <Badge>Coming soon</Badge>
-              </div>
-              <p className="mt-1 text-sm font-medium text-slate-500">
-                {service.subtitle}
-              </p>
-              <p className="mt-2 text-sm text-slate-500">
-                {service.description}
-              </p>
-            </Card>
-          ),
-        )}
-      </div>
+      {PRODUCTS.map((product) => {
+        const entitled = organization?.enabledApplications.includes(product.application) ?? false;
+        if (!entitled && hideUnsubscribedModules) return null;
+
+        return (
+          <div key={product.application} className="mt-8">
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                {product.name}
+              </h2>
+              <span className="text-xs text-slate-400">{product.tagline}</span>
+              {!entitled && (
+                <Badge tone="slate">Not in your subscription</Badge>
+              )}
+            </div>
+            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {product.services.map((service) => {
+                const active = service.built && entitled;
+
+                return active && service.href ? (
+                  <Link key={service.key} href={service.href}>
+                    <Card className="h-full p-5 transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
+                      <div className="flex items-start justify-between">
+                        <h3 className="font-semibold text-slate-900">
+                          {service.title}
+                        </h3>
+                        <Badge tone="green">Active</Badge>
+                      </div>
+                      <p className="mt-1 text-sm font-medium text-indigo-600">
+                        {service.subtitle}
+                      </p>
+                      <p className="mt-2 text-sm text-slate-500">
+                        {service.description}
+                      </p>
+                    </Card>
+                  </Link>
+                ) : (
+                  <Card key={service.key} className="h-full p-5 opacity-60">
+                    <div className="flex items-start justify-between">
+                      <h3 className="font-semibold text-slate-900">
+                        {service.title}
+                      </h3>
+                      <Badge>{!entitled ? "Locked" : "Coming soon"}</Badge>
+                    </div>
+                    <p className="mt-1 text-sm font-medium text-slate-500">
+                      {service.subtitle}
+                    </p>
+                    <p className="mt-2 text-sm text-slate-500">
+                      {service.description}
+                    </p>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </AppShell>
   );
 }

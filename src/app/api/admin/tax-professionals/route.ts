@@ -36,8 +36,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { firmName, contactEmail, contactPhone, adminName, adminEmail, adminPassword } =
-    parsed.data;
+  const {
+    firmName,
+    contactEmail,
+    contactPhone,
+    adminName,
+    adminEmail,
+    adminPassword,
+    enabledApplications,
+    subscriptionStartDate,
+    subscriptionEndDate,
+  } = parsed.data;
 
   const existingUser = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (existingUser) {
@@ -54,6 +63,9 @@ export async function POST(request: Request) {
       name: firmName,
       contactEmail: contactEmail || null,
       contactPhone: contactPhone || null,
+      enabledApplications,
+      subscriptionStartDate: subscriptionStartDate ? new Date(subscriptionStartDate) : null,
+      subscriptionEndDate: subscriptionEndDate ? new Date(subscriptionEndDate) : null,
       users: {
         create: {
           name: adminName,

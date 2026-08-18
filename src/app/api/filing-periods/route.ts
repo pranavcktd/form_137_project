@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   const filingPeriods = await prisma.filingPeriod.findMany({
     where: { clientId },
     orderBy: [{ financialYear: "desc" }, { month: "desc" }],
-    include: { _count: { select: { ddoRecords: true } } },
+    include: { _count: { select: { ddoRecords: true, generatedFiles: true } } },
   });
 
   return NextResponse.json(filingPeriods);

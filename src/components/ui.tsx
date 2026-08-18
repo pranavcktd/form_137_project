@@ -148,3 +148,113 @@ export function LoadingState() {
     </div>
   );
 }
+
+export function Pagination({
+  page,
+  totalPages,
+  onPageChange,
+  totalItems,
+  pageSize,
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  /** When given with pageSize, shows "X–Y of N" instead of just "Page X of Y". */
+  totalItems?: number;
+  pageSize?: number;
+}) {
+  if (totalPages <= 1) return null;
+
+  const rangeText =
+    totalItems !== undefined && pageSize !== undefined
+      ? `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, totalItems)} of ${totalItems}`
+      : `Page ${page} of ${totalPages}`;
+
+  return (
+    <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-sm text-slate-500">
+      <span>{rangeText}</span>
+      <div className="flex gap-2">
+        <Button variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
+          Previous
+        </Button>
+        <Button variant="secondary" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
+          Next
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export function BrandFooter({ className = "" }: { className?: string }) {
+  return (
+    <p className={`text-center text-xs text-slate-400 ${className}`}>
+      Designed &amp; Developed by CoreNexGen AI Technologies Private Limited
+    </p>
+  );
+}
+
+/**
+ * The "Nex" wordmark, shown consistently everywhere: the header on every
+ * authenticated page, plus the login and change-password screens.
+ * `compact` fits it inline in the header; the default stacked form suits
+ * the more spacious auth pages.
+ */
+export function NexLogo({ compact = false, className = "" }: { compact?: boolean; className?: string }) {
+  const badge = (
+    <span
+      className={`inline-flex items-center rounded-xl bg-indigo-600 font-bold text-white shadow-lg shadow-indigo-200 ${compact ? "px-2.5 py-1 text-sm" : "px-4 py-2 text-2xl"}`}
+    >
+      Nex
+    </span>
+  );
+  const company = (
+    <span className={`text-slate-400 ${compact ? "text-xs" : "text-xs"}`}>
+      (CoreNexGen AI Technologies Private Limited)
+    </span>
+  );
+
+  if (compact) {
+    return (
+      <span className={`inline-flex items-center gap-2 ${className}`}>
+        {badge}
+        <span className="hidden sm:inline">{company}</span>
+      </span>
+    );
+  }
+
+  return (
+    <span className={`inline-flex flex-col items-start gap-1.5 ${className}`}>
+      {badge}
+      {company}
+    </span>
+  );
+}
+
+export function Modal({
+  title,
+  onClose,
+  children,
+}: {
+  title: ReactNode;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600"
+            aria-label="Close"
+          >
+            &times;
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}

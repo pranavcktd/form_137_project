@@ -27,7 +27,9 @@ type FilingPeriod = {
   month: number;
   statementType: StatementType;
   status: "DRAFT" | "LOCKED";
-  _count: { ddoRecords: number };
+  receiptNumber: string | null;
+  receiptDate: string | null;
+  _count: { ddoRecords: number; generatedFiles: number };
 };
 
 type FormValues = {
@@ -172,9 +174,30 @@ export function FilingPeriodsListClient({ clientId }: { clientId: string }) {
     load();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this filing period and all its DDO records? This can't be undone.")) return;
-    await fetch(`/api/filing-periods/${id}`, { method: "DELETE" });
+  const handleDelete = async (p: FilingPeriod) => {
+    if (p.status === "LOCKED") {
+      window.alert('This return is locked. Open it and click "Edit Return" to unlock it before deleting.');
+      return;
+    }
+    if (p.receiptNumber || p.receiptDate) {
+      window.alert(
+        "This return already has a Receipt/Acknowledgement Number and Date recorded. Open it and clear those fields first if you still want to delete it.",
+      );
+      return;
+    }
+
+    const confirmMessage =
+      p._count.generatedFiles > 0
+        ? "You already generated this return and it had a Receipt/Acknowledgement Number recorded at some point. Are you sure you still want to delete this filing period and all its DDO records?"
+        : "Delete this filing period and all its DDO records? This can't be undone.";
+    if (!window.confirm(confirmMessage)) return;
+
+    const res = await fetch(`/api/filing-periods/${p.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const body = await res.json();
+      window.alert(body.error?.formErrors?.[0] ?? "Could not delete this filing period.");
+      return;
+    }
     load();
   };
 
@@ -246,7 +269,7 @@ export function FilingPeriodsListClient({ clientId }: { clientId: string }) {
                     Edit
                   </Button>
                 )}
-                <Button variant="danger" onClick={() => handleDelete(p.id)}>
+                <Button variant="danger" onClick={() => handleDelete(p)}>
                   Delete
                 </Button>
               </div>

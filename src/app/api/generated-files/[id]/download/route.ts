@@ -19,9 +19,14 @@ export async function GET(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!filingPeriod) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const filesToZip: Array<{ path: string; name: string }> = [];
+  const filesToZip: Array<{ path: string; name: string }> = [
+    { path: generatedFile.rawTextPath, name: "statement.txt" },
+  ];
   if (generatedFile.fvuFilePath) {
     filesToZip.push({ path: generatedFile.fvuFilePath, name: "statement.fvu" });
+  }
+  if (generatedFile.statisticFilePath) {
+    filesToZip.push({ path: generatedFile.statisticFilePath, name: "statistics-report.pdf" });
   }
   if (generatedFile.receiptPath) {
     filesToZip.push({ path: generatedFile.receiptPath, name: "receipt.html" });

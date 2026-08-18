@@ -9,6 +9,9 @@ export default auth((req) => {
     req.nextUrl.pathname.startsWith(path),
   );
   const isAdminPath = req.nextUrl.pathname.startsWith("/admin");
+  const isTeamPath = req.nextUrl.pathname.startsWith("/team");
+  const isChangePasswordPath = req.nextUrl.pathname.startsWith("/change-password");
+  const isApiPath = req.nextUrl.pathname.startsWith("/api/");
 
   if (!isLoggedIn && !isPublicPath) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
@@ -19,7 +22,16 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/", req.nextUrl.origin));
   }
 
+  // A temp/reset password must be changed before anything else is usable.
+  if (isLoggedIn && req.auth?.user?.mustChangePassword && !isChangePasswordPath && !isApiPath) {
+    return NextResponse.redirect(new URL("/change-password", req.nextUrl.origin));
+  }
+
   if (isLoggedIn && isAdminPath && req.auth?.user?.role !== "SUPER_ADMIN") {
+    return NextResponse.redirect(new URL("/", req.nextUrl.origin));
+  }
+
+  if (isLoggedIn && isTeamPath && req.auth?.user?.role !== "ADMIN") {
     return NextResponse.redirect(new URL("/", req.nextUrl.origin));
   }
 });

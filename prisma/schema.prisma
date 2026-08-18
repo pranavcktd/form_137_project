@@ -17,6 +17,11 @@ enum UserRole {
   PREPARER
 }
 
+enum OrganizationStatus {
+  ACTIVE
+  DISABLED
+}
+
 enum StatementType {
   ORIGINAL
   CORRECTION_M
@@ -54,6 +59,20 @@ model Organization {
   contactEmail String?
   contactPhone String?
 
+  status                OrganizationStatus @default(ACTIVE)
+  subscriptionStartDate DateTime?
+  subscriptionEndDate   DateTime?
+  /** Which of the platform's modules this firm's subscription covers, e.g. ["FORM137", "TDS"]. */
+  enabledApplications   String[]           @default(["FORM137"])
+
+  /** This firm's own SMTP config — set by the firm's own ADMIN from their Profile, used for password-reset
+   *  emails to their own staff and any future mail the firm sends to their own Clients. Falls back to the
+   *  platform's own SMTP settings, then env vars, when unset. */
+  smtpHost     String?
+  smtpPort     Int?
+  smtpUser     String?
+  smtpPassword String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -70,6 +89,11 @@ model User {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
+  disabled          Boolean   @default(false)
+  /** Forces the change-password flow on next login — set after a super-admin password reset. */
+  mustChangePassword Boolean  @default(false)
+  lastLoginAt        DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -79,6 +103,9 @@ model Client {
   id             String       @id @default(cuid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  /** Which return type(s) this client files, chosen at onboarding — a subset of the firm's own enabledApplications. */
+  enabledReturnTypes String[]   @default(["FORM137"])
 
   ain              String       @unique
   tan              String?
@@ -218,12 +245,13 @@ model GeneratedFile {
   filingPeriodId String
   filingPeriod   FilingPeriod        @relation(fields: [filingPeriodId], references: [id], onDelete: Cascade)
 
-  rawTextPath String
-  fvuFilePath String?
-  errHtmlPath String?
-  receiptPath String?
-  fvuVersion  String
-  status      GeneratedFileStatus @default(PENDING)
+  rawTextPath      String
+  fvuFilePath      String?
+  statisticFilePath String?
+  errHtmlPath      String?
+  receiptPath      String?
+  fvuVersion       String
+  status           GeneratedFileStatus @default(PENDING)
 
   createdAt DateTime @default(now())
 }
@@ -235,4 +263,26 @@ model FvuVersionStatus {
   detectedVersion  String?
   isNewer          Boolean  @default(false)
   checkedAt        DateTime @default(now())
+}
+
+/**
+ * Singleton row (id="singleton") holding platform-level notification config,
+ * set by the super admin from their own Profile page instead of .env — so
+ * SMTP/Slack credentials are entered directly in the app, not shared out of
+ * band. Falls back to the equivalent env vars when unset (see notify.ts).
+ */
+model PlatformSettings {
+  id             String  @id @default("singleton")
+  smtpHost       String?
+  smtpPort       Int?
+  smtpUser       String?
+  smtpPassword   String?
+  alertEmailTo   String?
+  slackWebhookUrl String?
+
+  /** When true, a product a firm hasn't subscribed to (e.g. Nex TDS/GST) is omitted
+   *  entirely from their dashboard instead of shown locked/grayed out. */
+  hideUnsubscribedModules Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
 }

@@ -14,6 +14,9 @@ export const tanSchema = z
 
 /** Profile fields for a Client (the actual AIN/TAN filing entity a firm files returns for). */
 export const clientProfileSchema = z.object({
+  enabledReturnTypes: z
+    .array(z.enum(["FORM137", "TDS", "GST"]))
+    .min(1, "Select at least one return type"),
   ain: ainSchema,
   tan: tanSchema.optional().or(z.literal("")),
   ministryName: z.string().optional().or(z.literal("")),
@@ -49,6 +52,8 @@ export const clientProfileSchema = z.object({
 
 export type ClientProfileInput = z.infer<typeof clientProfileSchema>;
 
+const APPLICATION_TYPE_KEYS = ["FORM137", "TDS", "GST"] as const;
+
 /** Platform-admin-only: onboarding a new Tax Professional firm + its first admin user. */
 export const firmOnboardingSchema = z.object({
   firmName: z.string().min(1, "Firm name is required"),
@@ -57,6 +62,42 @@ export const firmOnboardingSchema = z.object({
   adminName: z.string().min(1, "Admin name is required"),
   adminEmail: z.string().email("Enter a valid email address"),
   adminPassword: z.string().min(8, "Password must be at least 8 characters"),
+  enabledApplications: z.array(z.enum(APPLICATION_TYPE_KEYS)).min(1, "Select at least one application"),
+  subscriptionStartDate: z.string().optional().or(z.literal("")),
+  subscriptionEndDate: z.string().optional().or(z.literal("")),
 });
 
 export type FirmOnboardingInput = z.infer<typeof firmOnboardingSchema>;
+
+/** Platform-admin-only: editing an existing firm's profile/subscription/entitlements. */
+export const firmEditSchema = z.object({
+  firmName: z.string().min(1, "Firm name is required"),
+  contactEmail: z.string().email("Enter a valid email address").optional().or(z.literal("")),
+  contactPhone: z.string().optional().or(z.literal("")),
+  status: z.enum(["ACTIVE", "DISABLED"]),
+  enabledApplications: z.array(z.enum(APPLICATION_TYPE_KEYS)).min(1, "Select at least one application"),
+  subscriptionStartDate: z.string().optional().or(z.literal("")),
+  subscriptionEndDate: z.string().optional().or(z.literal("")),
+});
+
+export type FirmEditInput = z.infer<typeof firmEditSchema>;
+
+/** Platform-admin-only: adding an additional login (ADMIN or PREPARER) to an existing firm. */
+export const firmUserCreateSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  role: z.enum(["ADMIN", "PREPARER"]),
+});
+
+export type FirmUserCreateInput = z.infer<typeof firmUserCreateSchema>;
+
+/** Platform-admin-only: editing an existing user's login (not password — that's a separate reset action). */
+export const firmUserEditSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Enter a valid email address"),
+  role: z.enum(["ADMIN", "PREPARER"]),
+  disabled: z.boolean(),
+});
+
+export type FirmUserEditInput = z.infer<typeof firmUserEditSchema>;

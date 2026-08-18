@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button, Card, FieldLabel, inputClass } from "@/components/ui";
+import { APPLICATION_TYPES } from "@/lib/applicationTypes";
 
 export function NewTaxProfessionalForm() {
   const router = useRouter();
@@ -12,8 +13,16 @@ export function NewTaxProfessionalForm() {
   const [adminName, setAdminName] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
+  const [enabledApplications, setEnabledApplications] = useState<string[]>(["FORM137"]);
+  const [subscriptionStartDate, setSubscriptionStartDate] = useState("");
+  const [subscriptionEndDate, setSubscriptionEndDate] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  const toggleApplication = (key: string) =>
+    setEnabledApplications((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +39,9 @@ export function NewTaxProfessionalForm() {
         adminName,
         adminEmail,
         adminPassword,
+        enabledApplications,
+        subscriptionStartDate,
+        subscriptionEndDate,
       }),
     });
 
@@ -127,6 +139,47 @@ export function NewTaxProfessionalForm() {
               minLength={8}
               value={adminPassword}
               onChange={(e) => setAdminPassword(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <hr className="border-slate-100" />
+
+        <h3 className="text-sm font-semibold text-slate-900">Subscription</h3>
+        <div className="space-y-2">
+          <FieldLabel>Applications this firm's subscription covers</FieldLabel>
+          {APPLICATION_TYPES.map((app) => (
+            <label key={app.key} className="flex items-start gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={enabledApplications.includes(app.key)}
+                onChange={() => toggleApplication(app.key)}
+              />
+              <span>
+                <span className="font-medium">{app.label}</span>
+                <span className="block text-xs text-slate-500">{app.description}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-1">
+            <FieldLabel>Subscription Start (optional)</FieldLabel>
+            <input
+              type="date"
+              className={inputClass}
+              value={subscriptionStartDate}
+              onChange={(e) => setSubscriptionStartDate(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <FieldLabel>Subscription End (optional)</FieldLabel>
+            <input
+              type="date"
+              className={inputClass}
+              value={subscriptionEndDate}
+              onChange={(e) => setSubscriptionEndDate(e.target.value)}
             />
           </div>
         </div>

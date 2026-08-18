@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/app-shell";
+import { FvuVersionBanner } from "@/components/fvu-version-banner";
 import { FilingPeriodDetailClient } from "./client";
 
 export default async function FilingPeriodDetailPage({
@@ -9,7 +10,7 @@ export default async function FilingPeriodDetailPage({
   const { id } = await params;
   return (
     <AppShell>
-      <FilingPeriodDetailClient filingPeriodId={id} />
+      <FilingPeriodDetailClient filingPeriodId={id} fvuBanner={<FvuVersionBanner />} />
     </AppShell>
   );
 }

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Badge, Card, EmptyState, FieldLabel, LoadingState, inputClass } from "@/components/ui";
+import { Badge, Card, EmptyState, FieldLabel, LoadingState, Pagination, inputClass } from "@/components/ui";
 import { listFinancialYears } from "@/lib/financialYear";
+import { usePagination } from "@/lib/usePagination";
+import { formTypeLabel } from "@/lib/formTypeLabels";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -24,6 +26,7 @@ export function FyWiseReportClient({ clientId }: { clientId: string }) {
   const fyOptions = listFinancialYears();
   const [financialYear, setFinancialYear] = useState(fyOptions[0]?.value);
   const [result, setResult] = useState<{ financialYear: number; rows: Row[] } | null>(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!financialYear) return;
@@ -43,6 +46,14 @@ export function FyWiseReportClient({ clientId }: { clientId: string }) {
   const totalDeducted = rows?.reduce((sum, r) => sum + r.taxDeducted, 0) ?? 0;
   const totalRemitted = rows?.reduce((sum, r) => sum + r.totalRemitted, 0) ?? 0;
 
+  const searchTerm = search.trim().toLowerCase();
+  const filteredRows = rows
+    ? searchTerm
+      ? rows.filter((r) => [r.tan, r.name].some((v) => (v ?? "").toLowerCase().includes(searchTerm)))
+      : rows
+    : [];
+  const rowsPage = usePagination(filteredRows, undefined, `${financialYear}::${search}`);
+
   return (
     <div>
       <Card className="flex flex-wrap items-end gap-3 p-5">
@@ -60,10 +71,22 @@ export function FyWiseReportClient({ clientId }: { clientId: string }) {
             ))}
           </select>
         </div>
+        <div className="space-y-1">
+          <FieldLabel>Search DDO (name or TAN)</FieldLabel>
+          <input
+            className={inputClass}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Type a DDO name or TAN..."
+          />
+        </div>
         {rows && rows.length > 0 && (
           <div className="ml-auto flex items-center gap-3">
             <Badge tone="indigo">Total Deducted: {totalDeducted.toFixed(2)}</Badge>
             <Badge tone="green">Total Remitted: {totalRemitted.toFixed(2)}</Badge>
+            <Badge tone={Math.round((totalDeducted - totalRemitted) * 100) === 0 ? "slate" : "amber"}>
+              Difference: {(totalDeducted - totalRemitted).toFixed(2)}
+            </Badge>
           </div>
         )}
         <a
@@ -79,39 +102,57 @@ export function FyWiseReportClient({ clientId }: { clientId: string }) {
           <LoadingState />
         ) : rows.length === 0 ? (
           <EmptyState>No transactions filed for this financial year.</EmptyState>
+        ) : filteredRows.length === 0 ? (
+          <EmptyState>No transactions match &ldquo;{search}&rdquo;.</EmptyState>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="text-slate-500">
-                <th className="pr-4 py-1">Month</th>
-                <th className="pr-4">Type</th>
-                <th className="pr-4">Status</th>
-                <th className="pr-4">TAN</th>
-                <th className="pr-4">DDO Name</th>
-                <th className="pr-4">Form</th>
-                <th className="pr-4">Deducted</th>
-                <th>Remitted</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => (
-                <tr key={i} className="border-t border-slate-100">
-                  <td className="py-1 pr-4">{MONTHS[r.month - 1]}</td>
-                  <td className="py-1 pr-4">{r.statementType}</td>
-                  <td className="py-1 pr-4">
-                    <Badge tone={r.periodStatus === "LOCKED" ? "green" : "amber"}>
-                      {r.periodStatus === "LOCKED" ? "Locked" : "Draft"}
-                    </Badge>
-                  </td>
-                  <td className="py-1 pr-4">{r.tan}</td>
-                  <td className="py-1 pr-4">{r.name}</td>
-                  <td className="py-1 pr-4">{r.formType}</td>
-                  <td className="py-1 pr-4">{r.taxDeducted.toFixed(2)}</td>
-                  <td className="py-1">{r.totalRemitted.toFixed(2)}</td>
+          <>
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="text-slate-500">
+                  <th className="pr-4 py-1">Month</th>
+                  <th className="pr-4">Type</th>
+                  <th className="pr-4">Status</th>
+                  <th className="pr-4">TAN</th>
+                  <th className="pr-4">DDO Name</th>
+                  <th className="pr-4">Form</th>
+                  <th className="pr-4">Deducted</th>
+                  <th className="pr-4">Remitted</th>
+                  <th>Difference</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rowsPage.pageItems.map((r, i) => {
+                  const difference = Math.round((r.taxDeducted - r.totalRemitted) * 100) / 100;
+                  return (
+                    <tr key={i} className="border-t border-slate-100">
+                      <td className="py-1 pr-4">{MONTHS[r.month - 1]}</td>
+                      <td className="py-1 pr-4">{r.statementType}</td>
+                      <td className="py-1 pr-4">
+                        <Badge tone={r.periodStatus === "LOCKED" ? "green" : "amber"}>
+                          {r.periodStatus === "LOCKED" ? "Locked" : "Draft"}
+                        </Badge>
+                      </td>
+                      <td className="py-1 pr-4">{r.tan}</td>
+                      <td className="py-1 pr-4">{r.name}</td>
+                      <td className="py-1 pr-4">{formTypeLabel(r.formType)}</td>
+                      <td className="py-1 pr-4">{r.taxDeducted.toFixed(2)}</td>
+                      <td className="py-1 pr-4">{r.totalRemitted.toFixed(2)}</td>
+                      <td className={`py-1 ${difference !== 0 ? "font-medium text-amber-700" : ""}`}>
+                        {difference.toFixed(2)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <Pagination
+              page={rowsPage.page}
+              totalPages={rowsPage.totalPages}
+              onPageChange={rowsPage.setPage}
+              totalItems={rowsPage.totalItems}
+              pageSize={rowsPage.pageSize}
+            />
+          </>
         )}
       </Card>
     </div>

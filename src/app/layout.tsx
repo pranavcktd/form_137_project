@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Form 137 / 24G E-Filing",
+  title: "Nex IT — Form 137 / 24G E-Filing",
   description: "Prepare, validate, and generate Form 137 (24G) e-filing returns.",
 };
 

@@ -82,6 +82,7 @@ export async function POST(
       filingPeriodId: id,
       rawTextPath: inputPath,
       fvuFilePath: fvuResult.fvuFilePath,
+      statisticFilePath: fvuResult.statisticFilePath,
       receiptPath: fvuResult.receiptFilePath,
       fvuVersion: "1.9",
       status: "FVU_PASSED",
@@ -96,7 +97,9 @@ export async function POST(
     data: { status: "LOCKED", lockedAt: new Date() },
   });
 
-  const filesToZip: Array<{ path: string; name: string }> = [];
+  const filesToZip: Array<{ path: string; name: string }> = [
+    { path: inputPath, name: "statement.txt" },
+  ];
   if (fvuResult.fvuFilePath) filesToZip.push({ path: fvuResult.fvuFilePath, name: "statement.fvu" });
   if (fvuResult.statisticFilePath) {
     filesToZip.push({ path: fvuResult.statisticFilePath, name: "statistics-report.pdf" });

@@ -8,6 +8,8 @@ import type { ImportedRow } from "@/lib/excel/parseDdoImport";
 import type { FieldError } from "@/lib/validation/validateField";
 import type { FvuFieldError } from "@/lib/fvu/parseErrorHtml";
 import { checkDiscrepancies } from "@/lib/analytics/discrepancies";
+import { usePagination } from "@/lib/usePagination";
+import { formTypeLabel } from "@/lib/formTypeLabels";
 import {
   Alert,
   Badge,
@@ -17,6 +19,7 @@ import {
   FieldLabel,
   LoadingState,
   PageHeader,
+  Pagination,
   inputClass,
 } from "@/components/ui";
 
@@ -98,7 +101,13 @@ function describeImportResult(result: {
   return parts.length > 0 ? parts.join(". ") + "." : "Nothing to import.";
 }
 
-export function FilingPeriodDetailClient({ filingPeriodId }: { filingPeriodId: string }) {
+export function FilingPeriodDetailClient({
+  filingPeriodId,
+  fvuBanner,
+}: {
+  filingPeriodId: string;
+  fvuBanner?: React.ReactNode;
+}) {
   const [loading, setLoading] = useState(true);
   const [filingPeriod, setFilingPeriod] = useState<FilingPeriod | null>(null);
   const [client, setClient] = useState<Client | null>(null);
@@ -140,6 +149,9 @@ export function FilingPeriodDetailClient({ filingPeriodId }: { filingPeriodId: s
   useEffect(load, [filingPeriodId]);
   useEffect(loadHistory, [filingPeriodId]);
 
+  const ddoRecordsPage = usePagination(ddoRecords);
+  const historyPage = usePagination(history);
+
   if (loading || !filingPeriod) {
     return <LoadingState />;
   }
@@ -175,7 +187,25 @@ export function FilingPeriodDetailClient({ filingPeriodId }: { filingPeriodId: s
   };
 
   const deleteRecord = async (id: string) => {
-    await fetch(`/api/filing-periods/${filingPeriodId}/ddo-records/${id}`, { method: "DELETE" });
+    if (filingPeriod.receiptNumber || filingPeriod.receiptDate) {
+      window.alert(
+        "This return already has a Receipt/Acknowledgement Number and Date recorded below. Clear those fields and save before you can delete a record.",
+      );
+      return;
+    }
+
+    const alreadyGenerated = history.some((h) => h.status === "FVU_PASSED");
+    const confirmMessage = alreadyGenerated
+      ? "You already generated this return and had a Receipt/Acknowledgement Number recorded for it. Are you sure you still want to delete this record?"
+      : "Delete this DDO record?";
+    if (!window.confirm(confirmMessage)) return;
+
+    const res = await fetch(`/api/filing-periods/${filingPeriodId}/ddo-records/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const body = await res.json();
+      window.alert(body.error?.formErrors?.[0] ?? "Could not delete this record.");
+      return;
+    }
     load();
   };
 
@@ -287,6 +317,18 @@ export function FilingPeriodDetailClient({ filingPeriodId }: { filingPeriodId: s
     load();
   };
 
+  const handleDeleteHistory = async (item: GeneratedFile) => {
+    if (
+      !window.confirm(
+        `Delete this generation attempt from ${new Date(item.createdAt).toLocaleString()}? Its files can't be recovered after this.`,
+      )
+    ) {
+      return;
+    }
+    await fetch(`/api/generated-files/${item.id}`, { method: "DELETE" });
+    loadHistory();
+  };
+
   const handleSaveReceipt = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingReceipt(true);
@@ -295,6 +337,20 @@ export function FilingPeriodDetailClient({ filingPeriodId }: { filingPeriodId: s
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ receiptNumber, receiptDate }),
     });
+    setSavingReceipt(false);
+    load();
+  };
+
+  const handleClearReceipt = async () => {
+    if (!window.confirm("Clear the Receipt/Acknowledgement Number and Date for this return?")) return;
+    setSavingReceipt(true);
+    await fetch(`/api/filing-periods/${filingPeriodId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ receiptNumber: "", receiptDate: "" }),
+    });
+    setReceiptNumber("");
+    setReceiptDate("");
     setSavingReceipt(false);
     load();
   };
@@ -333,6 +389,8 @@ export function FilingPeriodDetailClient({ filingPeriodId }: { filingPeriodId: s
         }
       />
 
+      {fvuBanner && <div className="mt-4">{fvuBanner}</div>}
+
       {locked && (
         <div className="mt-4">
           <Alert tone="amber">
@@ -358,7 +416,7 @@ export function FilingPeriodDetailClient({ filingPeriodId }: { filingPeriodId: s
       )}
 
       <div className="mt-8 flex items-center justify-between">
-        <h2 className="text-lg font-medium text-slate-900">DDO Records</h2>
+        <h2 className="text-lg font-medium text-slate-900">Transactions</h2>
         <div className="flex gap-2">
           <a
             href={`/api/filing-periods/${filingPeriodId}/summary-report`}
@@ -390,7 +448,7 @@ export function FilingPeriodDetailClient({ filingPeriodId }: { filingPeriodId: s
                   }}
                 />
               </label>
-              <Button onClick={() => setFormMode("new")}>Add DDO</Button>
+              <Button onClick={() => setFormMode("new")}>+ Add Transaction</Button>
             </>
           )}
         </div>
@@ -532,7 +590,7 @@ export function FilingPeriodDetailClient({ filingPeriodId }: { filingPeriodId: s
 
       <Card className="mt-4 divide-y divide-slate-100">
         {ddoRecords.length === 0 && <EmptyState>No DDO records yet.</EmptyState>}
-        {ddoRecords.map((record) =>
+        {ddoRecordsPage.pageItems.map((record) =>
           formMode === record.id && !locked ? (
             <div key={record.id} className="p-4">
               <DdoRecordForm
@@ -551,8 +609,9 @@ export function FilingPeriodDetailClient({ filingPeriodId }: { filingPeriodId: s
                   {record.serialNo}. {record.tan} &mdash; {record.name}
                 </p>
                 <p className="text-sm text-slate-500">
-                  {record.formType} &middot; Tax deducted: {record.taxDeducted} &middot; Remitted:{" "}
-                  {record.totalRemitted}
+                  {formTypeLabel(record.formType)} &middot; Deducted: {record.taxDeducted} &middot; Remitted:{" "}
+                  {record.totalRemitted} &middot; Difference:{" "}
+                  {(Number(record.taxDeducted) - Number(record.totalRemitted)).toFixed(2)}
                 </p>
               </div>
               {!locked && (
@@ -568,6 +627,13 @@ export function FilingPeriodDetailClient({ filingPeriodId }: { filingPeriodId: s
             </div>
           ),
         )}
+        <Pagination
+          page={ddoRecordsPage.page}
+          totalPages={ddoRecordsPage.totalPages}
+          onPageChange={ddoRecordsPage.setPage}
+          totalItems={ddoRecordsPage.totalItems}
+          pageSize={ddoRecordsPage.pageSize}
+        />
       </Card>
 
       {!locked && (
@@ -640,6 +706,11 @@ export function FilingPeriodDetailClient({ filingPeriodId }: { filingPeriodId: s
           <Button type="submit" disabled={savingReceipt}>
             {savingReceipt ? "Saving..." : "Save Receipt"}
           </Button>
+          {(receiptNumber || receiptDate) && (
+            <Button type="button" variant="secondary" disabled={savingReceipt} onClick={handleClearReceipt}>
+              Clear
+            </Button>
+          )}
         </form>
       </Card>
 
@@ -649,7 +720,7 @@ export function FilingPeriodDetailClient({ filingPeriodId }: { filingPeriodId: s
           {history.length === 0 && (
             <EmptyState>No generation attempts yet.</EmptyState>
           )}
-          {history.map((item) => (
+          {historyPage.pageItems.map((item) => (
             <div key={item.id} className="flex items-center justify-between p-4">
               <div>
                 <p className="text-sm font-medium text-slate-900">
@@ -659,16 +730,28 @@ export function FilingPeriodDetailClient({ filingPeriodId }: { filingPeriodId: s
                   {item.status === "FVU_PASSED" ? "Passed" : "Failed"}
                 </Badge>
               </div>
-              {item.fvuFilePath && (
-                <a
-                  href={`/api/generated-files/${item.id}/download`}
-                  className="text-sm text-indigo-600 hover:underline"
-                >
-                  Download
-                </a>
-              )}
+              <div className="flex items-center gap-3">
+                {item.fvuFilePath && (
+                  <a
+                    href={`/api/generated-files/${item.id}/download`}
+                    className="text-sm text-indigo-600 hover:underline"
+                  >
+                    Download
+                  </a>
+                )}
+                <Button variant="danger" onClick={() => handleDeleteHistory(item)}>
+                  Delete
+                </Button>
+              </div>
             </div>
           ))}
+          <Pagination
+            page={historyPage.page}
+            totalPages={historyPage.totalPages}
+            onPageChange={historyPage.setPage}
+            totalItems={historyPage.totalItems}
+            pageSize={historyPage.pageSize}
+          />
         </Card>
       </div>
     </div>

@@ -11,10 +11,17 @@ import { Alert, Button, Card, LoadingState } from "@/components/ui";
 
 export function ClientProfileEditor({ clientId }: { clientId: string }) {
   const [profile, setProfile] = useState<ClientProfileValues>(clientProfileDefaults());
+  const [availableReturnTypes, setAvailableReturnTypes] = useState<string[]>(["FORM137"]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/organization/me")
+      .then((res) => res.json())
+      .then((org) => setAvailableReturnTypes(org.enabledApplications ?? ["FORM137"]));
+  }, []);
 
   useEffect(() => {
     fetch(`/api/clients/${clientId}`)
@@ -22,6 +29,7 @@ export function ClientProfileEditor({ clientId }: { clientId: string }) {
       .then((client) => {
         if (client) {
           setProfile({
+            enabledReturnTypes: client.enabledReturnTypes ?? ["FORM137"],
             ain: client.ain ?? "",
             tan: client.tan ?? "",
             ministryName: client.ministryName ?? "",
@@ -102,7 +110,11 @@ export function ClientProfileEditor({ clientId }: { clientId: string }) {
         )}
         {saved && <Alert tone="green">Profile saved.</Alert>}
 
-        <ClientProfileFields values={profile} onChange={setProfile} />
+        <ClientProfileFields
+          values={profile}
+          onChange={setProfile}
+          availableReturnTypes={availableReturnTypes}
+        />
 
         <Button type="submit" disabled={saving}>
           {saving ? "Saving..." : "Save Profile"}

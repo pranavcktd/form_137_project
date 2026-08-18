@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { auth, signOut } from "@/lib/auth";
+import { BrandFooter, NexLogo } from "@/components/ui";
 
 export async function AppShell({
   children,
@@ -16,11 +17,8 @@ export async function AppShell({
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
-              F1
-            </span>
-            <span className="font-semibold text-slate-900">Form137 Suite</span>
+          <Link href="/">
+            <NexLogo compact />
           </Link>
 
           <div className="flex items-center gap-4">
@@ -29,10 +27,23 @@ export async function AppShell({
                 {firmName}
               </span>
             )}
-            {session?.user?.email && (
-              <span className="hidden text-sm text-slate-500 md:inline">
+            {session?.user && (
+              <span className="hidden text-right text-xs text-slate-400 lg:inline">
                 {session.user.email}
+                <br />
+                Last login:{" "}
+                {session.user.previousLoginAt
+                  ? new Date(session.user.previousLoginAt).toLocaleString()
+                  : "first login"}
               </span>
+            )}
+            {session?.user && (
+              <Link
+                href="/profile"
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+              >
+                Profile
+              </Link>
             )}
             <form
               action={async () => {
@@ -49,6 +60,10 @@ export async function AppShell({
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-10">{children}</main>
+
+      <footer className="border-t border-slate-200 bg-white py-4">
+        <BrandFooter />
+      </footer>
     </div>
   );
 }

@@ -53,7 +53,11 @@ export async function PATCH(
   // typo in the receipt number after the fact).
   if ("receiptNumber" in body || "receiptDate" in body) {
     const receiptNumber = typeof body.receiptNumber === "string" ? body.receiptNumber.trim() : undefined;
-    const receiptDate = typeof body.receiptDate === "string" && body.receiptDate ? new Date(body.receiptDate) : undefined;
+    // An empty string means "clear it" (→ null), not "leave it alone" (→
+    // undefined, skipped below) — those need to stay distinct, otherwise
+    // clearing the date silently keeps whatever was saved before.
+    const receiptDate =
+      typeof body.receiptDate === "string" ? (body.receiptDate ? new Date(body.receiptDate) : null) : undefined;
 
     const updated = await prisma.filingPeriod.update({
       where: { id },
@@ -111,6 +115,29 @@ export async function DELETE(
   const { session, filingPeriod } = await requireFilingPeriod(id);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!filingPeriod) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (filingPeriod.status === "LOCKED") {
+    return NextResponse.json(
+      { error: { formErrors: ["This filing period is locked. Click Edit Return (on its detail page) to unlock it before deleting."] } },
+      { status: 403 },
+    );
+  }
+  // Same rule as deleting an individual DDO record: the receipt fields
+  // record what was actually uploaded to the government portal and stay
+  // editable independent of the lock, so this is the only remaining guard
+  // once a period has been unlocked again after being acknowledged.
+  if (filingPeriod.receiptNumber || filingPeriod.receiptDate) {
+    return NextResponse.json(
+      {
+        error: {
+          formErrors: [
+            "This return already has a Receipt/Acknowledgement Number and Date recorded. Clear those fields (on its detail page) first if you still want to delete it.",
+          ],
+        },
+      },
+      { status: 403 },
+    );
+  }
 
   await prisma.filingPeriod.delete({ where: { id } });
 
