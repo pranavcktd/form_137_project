@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { auth, signOut } from "@/lib/auth";
-import { BrandFooter, NexLogo } from "@/components/ui";
+import { BrandFooter, ContactInfo, NexLogo } from "@/components/ui";
 
 export async function AppShell({
   children,
@@ -14,21 +14,21 @@ export async function AppShell({
   const session = await auth();
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="flex min-h-screen flex-col bg-slate-50">
+      <header className="border-b border-slate-200 bg-white/95 shadow-sm shadow-slate-100 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/">
+          <Link href="/" className="transition-opacity hover:opacity-90">
             <NexLogo compact />
           </Link>
 
           <div className="flex items-center gap-4">
             {firmName && (
-              <span className="hidden text-sm text-slate-500 sm:inline">
+              <span className="hidden text-sm font-medium text-slate-600 sm:inline">
                 {firmName}
               </span>
             )}
             {session?.user && (
-              <span className="hidden text-right text-xs text-slate-400 lg:inline">
+              <span className="hidden text-right text-xs leading-snug text-slate-400 lg:inline">
                 {session.user.email}
                 <br />
                 Last login:{" "}
@@ -40,7 +40,7 @@ export async function AppShell({
             {session?.user && (
               <Link
                 href="/profile"
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
               >
                 Profile
               </Link>
@@ -51,7 +51,7 @@ export async function AppShell({
                 await signOut({ redirectTo: "/login" });
               }}
             >
-              <button className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
+              <button className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700">
                 Sign out
               </button>
             </form>
@@ -59,10 +59,14 @@ export async function AppShell({
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-10">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">{children}</main>
 
-      <footer className="border-t border-slate-200 bg-white py-4">
-        <BrandFooter />
+      <footer className="border-t border-slate-200 bg-white">
+        <div className="mx-auto max-w-6xl px-4 py-6 text-center">
+          <ContactInfo />
+          <div className="mx-auto mt-4 h-px w-16 bg-slate-200" />
+          <BrandFooter className="mt-4" />
+        </div>
       </footer>
     </div>
   );

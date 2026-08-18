@@ -123,6 +123,35 @@ export async function sendPasswordResetEmail(
   return true;
 }
 
+/**
+ * Emails a self-service "forgot password" link, using the user's own
+ * firm's SMTP config (falling back to the platform's, then env vars).
+ * Returns whether an email was actually sent — if no SMTP is configured
+ * anywhere, self-service reset simply isn't available and the caller
+ * should tell the user to contact an admin instead.
+ */
+export async function sendPasswordResetLinkEmail(
+  toEmail: string,
+  toName: string,
+  resetUrl: string,
+  organizationId: string,
+): Promise<boolean> {
+  const config = await getOrgSmtpConfig(organizationId);
+  if (!config) return false;
+
+  await sendViaSmtp(
+    config,
+    toEmail,
+    "Reset your Nex password",
+    `Hi ${toName},\n\n` +
+      `Someone requested a password reset for your Nex account (${toEmail}).\n\n` +
+      `Reset your password: ${resetUrl}\n\n` +
+      `This link expires in 30 minutes and can only be used once. If you didn't request this, you can ignore this email — your password won't be changed.`,
+  );
+
+  return true;
+}
+
 async function sendSlackAlert(subject: string, body: string): Promise<void> {
   const webhookUrl = await getSlackWebhookUrl();
   if (!webhookUrl) return;

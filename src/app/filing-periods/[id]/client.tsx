@@ -126,6 +126,7 @@ export function FilingPeriodDetailClient({
   const [receiptNumber, setReceiptNumber] = useState("");
   const [receiptDate, setReceiptDate] = useState("");
   const [savingReceipt, setSavingReceipt] = useState(false);
+  const [transactionSearch, setTransactionSearch] = useState("");
 
   const load = () => {
     fetch(`/api/filing-periods/${filingPeriodId}`)
@@ -149,7 +150,14 @@ export function FilingPeriodDetailClient({
   useEffect(load, [filingPeriodId]);
   useEffect(loadHistory, [filingPeriodId]);
 
-  const ddoRecordsPage = usePagination(ddoRecords);
+  const transactionSearchTerm = transactionSearch.trim().toLowerCase();
+  const filteredDdoRecords = transactionSearchTerm
+    ? ddoRecords.filter((r) =>
+        [r.tan, r.name, r.formType].some((v) => (v ?? "").toLowerCase().includes(transactionSearchTerm)),
+      )
+    : ddoRecords;
+
+  const ddoRecordsPage = usePagination(filteredDdoRecords, undefined, transactionSearch);
   const historyPage = usePagination(history);
 
   if (loading || !filingPeriod) {
@@ -454,6 +462,17 @@ export function FilingPeriodDetailClient({
         </div>
       </div>
 
+      {ddoRecords.length > 0 && (
+        <div className="mt-4">
+          <input
+            className={inputClass}
+            value={transactionSearch}
+            onChange={(e) => setTransactionSearch(e.target.value)}
+            placeholder="Search transactions by TAN, DDO name, or form type..."
+          />
+        </div>
+      )}
+
       {importError && (
         <div className="mt-4">
           <Alert tone="red">{importError}</Alert>
@@ -590,6 +609,9 @@ export function FilingPeriodDetailClient({
 
       <Card className="mt-4 divide-y divide-slate-100">
         {ddoRecords.length === 0 && <EmptyState>No DDO records yet.</EmptyState>}
+        {ddoRecords.length > 0 && filteredDdoRecords.length === 0 && (
+          <EmptyState>No transactions match &ldquo;{transactionSearch}&rdquo;.</EmptyState>
+        )}
         {ddoRecordsPage.pageItems.map((record) =>
           formMode === record.id && !locked ? (
             <div key={record.id} className="p-4">

@@ -59,11 +59,7 @@ model Organization {
   contactEmail String?
   contactPhone String?
 
-  status                OrganizationStatus @default(ACTIVE)
-  subscriptionStartDate DateTime?
-  subscriptionEndDate   DateTime?
-  /** Which of the platform's modules this firm's subscription covers, e.g. ["FORM137", "TDS"]. */
-  enabledApplications   String[]           @default(["FORM137"])
+  status OrganizationStatus @default(ACTIVE)
 
   /** This firm's own SMTP config — set by the firm's own ADMIN from their Profile, used for password-reset
    *  emails to their own staff and any future mail the firm sends to their own Clients. Falls back to the
@@ -76,8 +72,97 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users   User[]
-  clients Client[]
+  users         User[]
+  clients       Client[]
+  subscriptions Subscription[]
+}
+
+enum SubscriptionStatus {
+  PENDING_PAYMENT
+  ACTIVE
+  CANCELLED
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum PaymentMethod {
+  MANUAL
+  RAZORPAY
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+/**
+ * One firm's subscription to one product (e.g. this firm's "Nex TDS" line item),
+ * each with its own price, billing cycle, and validity window — replaces the old
+ * single shared `Organization.enabledApplications`/`subscriptionStartDate/EndDate`,
+ * since firms can subscribe to different products on different terms and dates.
+ * A product only counts as entitled (usable) while status is ACTIVE and endDate
+ * hasn't passed yet — see `isSubscriptionActive` in src/lib/subscriptions.ts.
+ */
+model Subscription {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  /** "FORM137" | "TDS" | "GST" — matches ApplicationTypeKey in src/lib/applicationTypes.ts. */
+  application  String
+  price        Decimal            @db.Decimal(10, 2)
+  billingCycle BillingCycle       @default(MONTHLY)
+  startDate    DateTime?
+  endDate      DateTime?
+  status       SubscriptionStatus @default(PENDING_PAYMENT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payments SubscriptionPayment[]
+
+  @@unique([organizationId, application])
+}
+
+/** A single payment (or payment attempt) against a Subscription — manual (recorded by the
+ *  super admin, e.g. bank transfer/UPI) or via Razorpay (payment link, tracked to completion). */
+model SubscriptionPayment {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  amount      Decimal       @db.Decimal(10, 2)
+  method      PaymentMethod @default(MANUAL)
+  status      PaymentStatus @default(PENDING)
+  periodStart DateTime
+  periodEnd   DateTime
+  paidAt      DateTime?
+  /** For a manual payment: a reference note (bank transfer ref, UPI txn ID, etc). */
+  notes       String?
+
+  razorpayPaymentLinkId  String?
+  razorpayPaymentLinkUrl String?
+  razorpayPaymentId      String?
+
+  createdAt DateTime @default(now())
+
+  @@index([subscriptionId])
+}
+
+/** Platform-wide default price per product, set by the super admin — prefills the price
+ *  shown when onboarding a firm or adding a product to an existing one (still editable
+ *  per-firm from there, e.g. for a negotiated discount). */
+model ProductPrice {
+  /** "FORM137" | "TDS" | "GST" */
+  application  String       @id
+  price        Decimal      @db.Decimal(10, 2)
+  billingCycle BillingCycle @default(MONTHLY)
+  updatedAt    DateTime     @updatedAt
 }
 
 model User {
@@ -96,6 +181,26 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  passwordResetTokens PasswordResetToken[]
+}
+
+/**
+ * A single-use, time-limited self-service "forgot password" link. Only the
+ * SHA-256 hash of the token is stored — like a password — so a database
+ * leak alone can't be used to reset anyone's account; the raw token only
+ * ever exists in the emailed link itself.
+ */
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 /** An actual filing entity (Accounts Office/DTO/CDDO) that a Tax Professional firm files returns for. */
@@ -279,6 +384,13 @@ model PlatformSettings {
   smtpPassword   String?
   alertEmailTo   String?
   slackWebhookUrl String?
+
+  /** Razorpay platform account, used to generate hosted payment links for firm subscription
+   *  renewals/onboarding. `razorpayWebhookSecret` is the separate secret Razorpay signs webhook
+   *  payloads with (configured on their dashboard) — distinct from the API key secret. */
+  razorpayKeyId         String?
+  razorpayKeySecret     String?
+  razorpayWebhookSecret String?
 
   /** When true, a product a firm hasn't subscribed to (e.g. Nex TDS/GST) is omitted
    *  entirely from their dashboard instead of shown locked/grayed out. */

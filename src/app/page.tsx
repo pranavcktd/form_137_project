@@ -71,7 +71,7 @@ const PRODUCTS = [
       {
         key: "gst",
         title: "GST Returns",
-        subtitle: "Coming soon",
+        subtitle: "GSTR-1 / GSTR-3B / GSTR-9",
         description: "GST return preparation and filing.",
         href: null,
         built: false,
@@ -199,7 +199,7 @@ export default async function Home() {
                       <h3 className="font-semibold text-slate-900">
                         {service.title}
                       </h3>
-                      <Badge>{!entitled ? "Locked" : "Coming soon"}</Badge>
+                      <Badge>{!entitled ? "Locked" : "Not yet available"}</Badge>
                     </div>
                     <p className="mt-1 text-sm font-medium text-slate-500">
                       {service.subtitle}

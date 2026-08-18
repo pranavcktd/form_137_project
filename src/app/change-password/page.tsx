@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { signOut } from "next-auth/react";
-import { Alert, BrandFooter, Button, FieldLabel, NexLogo, inputClass } from "@/components/ui";
+import { Alert, BrandFooter, Button, ContactInfo, FieldLabel, NexLogo, inputClass } from "@/components/ui";
 
 export default function ChangePasswordPage() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -105,7 +105,8 @@ export default function ChangePasswordPage() {
             {submitting ? "Saving..." : "Change password"}
           </Button>
         </form>
-        <BrandFooter className="mt-6" />
+        <ContactInfo className="mt-6" />
+        <BrandFooter className="mt-3" />
       </div>
     </div>
   );

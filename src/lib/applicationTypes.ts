@@ -18,12 +18,12 @@ export const APPLICATION_TYPES = [
   {
     key: "TDS",
     label: "Nex TDS",
-    description: "TDS/TCS returns (24Q / 26Q / 27Q / 27EQ) for deductors. Coming soon.",
+    description: "TDS/TCS returns (24Q / 26Q / 27Q / 27EQ) for deductors.",
   },
   {
     key: "GST",
     label: "Nex GST",
-    description: "GST return filing. Coming soon.",
+    description: "GST return filing.",
   },
 ] as const;
 

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { Alert, BrandFooter, Button, FieldLabel, NexLogo, inputClass } from "@/components/ui";
+import { Alert, BrandFooter, Button, ContactInfo, FieldLabel, NexLogo, inputClass } from "@/components/ui";
 
 const PRODUCT_BADGES = [
   { key: "IT", label: "IT", tone: "bg-indigo-50 text-indigo-700 shadow-indigo-100/80", rotate: "-rotate-3" },
@@ -94,13 +95,20 @@ export default function LoginPage() {
             </li>
             <li className="flex items-start gap-2 text-sm text-slate-600">
               <span className="mt-0.5 text-indigo-600">✓</span>
-              TDS returns (24Q / 26Q / 27Q / 27EQ) — Nex TDS, coming soon
+              TDS returns (24Q / 26Q / 27Q / 27EQ) — Nex TDS
             </li>
             <li className="flex items-start gap-2 text-sm text-slate-600">
               <span className="mt-0.5 text-indigo-600">✓</span>
-              GST return filing — Nex GST, coming soon
+              GST return filing — Nex GST
             </li>
           </ul>
+
+          <div className="mt-10">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Need help?
+            </p>
+            <ContactInfo align="start" className="mt-2" />
+          </div>
         </div>
 
         {/* Login card */}
@@ -156,10 +164,16 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-xs text-slate-400">
-            Forgot your password, or new to Nex? Contact your administrator.
+          <p className="mt-6 text-center text-sm">
+            <Link href="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-700">
+              Forgot password?
+            </Link>
           </p>
-          <BrandFooter className="mt-2" />
+          <p className="mt-2 text-center text-xs text-slate-400">
+            New to Nex? Contact your administrator.
+          </p>
+          <ContactInfo className="mt-3" />
+          <BrandFooter className="mt-3" />
         </div>
       </div>
     </div>

@@ -193,6 +193,51 @@ export function BrandFooter({ className = "" }: { className?: string }) {
   );
 }
 
+const MailIcon = () => (
+  <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+    <path
+      d="M3 5.5A1.5 1.5 0 0 1 4.5 4h11A1.5 1.5 0 0 1 17 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5v-9Z"
+      stroke="currentColor"
+      strokeWidth="1.4"
+    />
+    <path d="m4 5.5 6 5 6-5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const PhoneIcon = () => (
+  <svg viewBox="0 0 20 20" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+    <path
+      d="M6.5 3.5 8 6.5 6.3 8.2a8 8 0 0 0 5.5 5.5l1.7-1.7 3 1.5v2.2a1.3 1.3 0 0 1-1.4 1.3A13 13 0 0 1 3.5 5.9a1.3 1.3 0 0 1 1.3-1.4h1.7Z"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+/** Company contact details — shown on the login page and in the authenticated footer. */
+export function ContactInfo({ align = "center", className = "" }: { align?: "center" | "start"; className?: string }) {
+  return (
+    <div className={`flex flex-wrap items-center gap-x-5 gap-y-1.5 ${align === "center" ? "justify-center" : "justify-start"} ${className}`}>
+      <a
+        href="mailto:info@corenexgenai.in"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-indigo-600"
+      >
+        <MailIcon />
+        info@corenexgenai.in
+      </a>
+      <a
+        href="tel:+916388243575"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-indigo-600"
+      >
+        <PhoneIcon />
+        +91 6388243575
+      </a>
+    </div>
+  );
+}
+
 /**
  * The "Nex" wordmark, shown consistently everywhere: the header on every
  * authenticated page, plus the login and change-password screens.
