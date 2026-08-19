@@ -105,7 +105,10 @@ export default async function Home() {
     prisma.organization.findUnique({ where: { id: session.user.organizationId } }),
     prisma.client.count({ where: { organizationId: session.user.organizationId } }),
     prisma.platformSettings.findUnique({ where: { id: "singleton" } }),
-    prisma.subscription.findMany({ where: { organizationId: session.user.organizationId } }),
+    prisma.subscription.findMany({
+      where: { organizationId: session.user.organizationId },
+      include: { payments: { where: { status: "PENDING" }, take: 1 } },
+    }),
   ]);
   const hideUnsubscribedModules = platformSettings?.hideUnsubscribedModules ?? false;
   const activeSubscriptions = subscriptions.filter(isSubscriptionActive);
@@ -117,7 +120,13 @@ export default async function Home() {
   const subscriptionByApp = new Map<string, ProductSubscriptionInfo>(
     subscriptions.map((s) => [
       s.application,
-      { price: Number(s.price), billingCycle: s.billingCycle, endDate: s.endDate?.toISOString() ?? null, status: s.status },
+      {
+        price: Number(s.price),
+        billingCycle: s.billingCycle,
+        endDate: s.endDate?.toISOString() ?? null,
+        status: s.status,
+        hasPendingRequest: s.payments.length > 0,
+      },
     ]),
   );
   const canRenew = session.user.role === "ADMIN";

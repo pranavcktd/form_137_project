@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nex IT — Form 137 / 24G E-Filing",
-  description: "Prepare, validate, and generate Form 137 (24G) e-filing returns.",
+  title: "Nex — Tax Compliance Suite",
+  description: "Simplify your tax compliance with Nex — Income Tax, TDS, and GST filing in one platform.",
 };
 
 export default function RootLayout({

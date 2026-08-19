@@ -8,14 +8,18 @@ export type ProductSubscriptionInfo = {
   billingCycle: "MONTHLY" | "YEARLY";
   endDate: string | null;
   status: "PENDING_PAYMENT" | "ACTIVE" | "CANCELLED";
+  /** A renewal request is already awaiting the platform's confirmation — see the
+   *  renew API route for how it's created (self-service, no gateway configured). */
+  hasPendingRequest: boolean;
 };
 
 /**
  * Shows a subscribed product's expiry (or "pending payment") on the firm's own
  * dashboard, with a self-service Renew button for admins — hits the firm-side
- * renew endpoint, which returns a Razorpay payment link when one's configured,
- * or `{available: false}` when it isn't yet (shown as a message instead of a
- * broken button).
+ * renew endpoint, which generates a Razorpay payment link when one's configured,
+ * or otherwise records a renewal request for the platform to confirm once paid
+ * offline (extending from the current expiry either way, so paying ahead of time
+ * never loses already-paid validity).
  */
 export function SubscriptionRenewPanel({
   application,
@@ -28,12 +32,14 @@ export function SubscriptionRenewPanel({
 }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [requested, setRequested] = useState(false);
 
   if (!subscription || subscription.status === "CANCELLED") return null;
 
   const isExpired =
     subscription.status === "PENDING_PAYMENT" ||
     (subscription.endDate !== null && new Date(subscription.endDate) < new Date());
+  const pendingRequest = requested || subscription.hasPendingRequest;
 
   const handleRenew = async () => {
     setBusy(true);
@@ -46,11 +52,15 @@ export function SubscriptionRenewPanel({
       setMessage("Couldn't start renewal — please try again.");
       return;
     }
-    if (!body.available) {
-      setMessage("Online renewal isn't set up yet — contact us to renew this product.");
+    if (body.available) {
+      window.open(body.url, "_blank", "noopener,noreferrer");
       return;
     }
-    window.open(body.url, "_blank", "noopener,noreferrer");
+    if (body.requested) {
+      setRequested(true);
+      return;
+    }
+    setMessage("Online renewal isn't set up yet — contact us to renew this product.");
   };
 
   return (
@@ -64,10 +74,14 @@ export function SubscriptionRenewPanel({
       ) : (
         <span className="text-slate-500">No expiry set</span>
       )}
-      {canRenew && (
-        <Button variant="secondary" className="px-2 py-1 text-xs" onClick={handleRenew} disabled={busy}>
-          {busy ? "..." : "Renew"}
-        </Button>
+      {pendingRequest ? (
+        <span className="text-amber-600">Renewal requested — awaiting confirmation</span>
+      ) : (
+        canRenew && (
+          <Button variant="secondary" className="px-2 py-1 text-xs" onClick={handleRenew} disabled={busy}>
+            {busy ? "..." : "Renew"}
+          </Button>
+        )
       )}
       {message && <span className="text-amber-600">{message}</span>}
     </div>

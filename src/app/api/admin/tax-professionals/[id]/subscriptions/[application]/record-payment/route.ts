@@ -30,26 +30,36 @@ export async function POST(
 
   const subscription = await prisma.subscription.findUnique({
     where: { organizationId_application: { organizationId: id, application } },
+    include: { payments: { where: { method: "MANUAL", status: "PENDING" }, take: 1 } },
   });
   if (!subscription) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const now = new Date();
   const periodStart = subscription.endDate && subscription.endDate > now ? subscription.endDate : now;
   const periodEnd = addBillingCycle(periodStart, subscription.billingCycle);
+  // If the firm self-requested this renewal (Renew button, no gateway configured),
+  // confirm that same pending request rather than leaving it dangling alongside a
+  // second, separate payment row.
+  const pendingRequest = subscription.payments[0];
 
   await prisma.$transaction([
-    prisma.subscriptionPayment.create({
-      data: {
-        subscriptionId: subscription.id,
-        amount: parsed.data.amount,
-        method: "MANUAL",
-        status: "PAID",
-        periodStart,
-        periodEnd,
-        paidAt: now,
-        notes: parsed.data.notes || null,
-      },
-    }),
+    pendingRequest
+      ? prisma.subscriptionPayment.update({
+          where: { id: pendingRequest.id },
+          data: { amount: parsed.data.amount, status: "PAID", periodStart, periodEnd, paidAt: now, notes: parsed.data.notes || pendingRequest.notes },
+        })
+      : prisma.subscriptionPayment.create({
+          data: {
+            subscriptionId: subscription.id,
+            amount: parsed.data.amount,
+            method: "MANUAL",
+            status: "PAID",
+            periodStart,
+            periodEnd,
+            paidAt: now,
+            notes: parsed.data.notes || null,
+          },
+        }),
     prisma.subscription.update({
       where: { id: subscription.id },
       data: {

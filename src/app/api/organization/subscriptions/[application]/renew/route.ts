@@ -4,13 +4,16 @@ import { prisma } from "@/lib/prisma";
 import { addBillingCycle } from "@/lib/subscriptions";
 import { createPaymentLink, isRazorpayConfigured } from "@/lib/razorpay";
 import { applicationTypeLabel } from "@/lib/applicationTypes";
+import { sendRenewalRequestAlert } from "@/lib/alerts/notify";
 
 /**
- * A firm's own ADMIN self-initiates paying for/renewing one of their products —
- * generates a Razorpay hosted payment link for its current price. Returns
- * `{available: false}` rather than an error when Razorpay isn't configured yet,
- * since that's an expected, non-broken state (self-service renewal simply isn't
- * live yet) rather than a failure the caller did something wrong to cause.
+ * A firm's own ADMIN self-initiates paying for/renewing one of their products.
+ * With Razorpay configured, generates a hosted payment link. Without one, there's
+ * no way to actually collect money here — instead this records a renewal
+ * *request* (a PENDING manual SubscriptionPayment, the same row shape the admin's
+ * Record Payment tool confirms) and emails the platform, so the super admin can
+ * collect payment offline and confirm it — extending from the current expiry
+ * either way, so paying in advance never loses time already paid for.
  */
 export async function POST(
   request: Request,
@@ -28,6 +31,7 @@ export async function POST(
   const [subscription, organization, configured] = await Promise.all([
     prisma.subscription.findUnique({
       where: { organizationId_application: { organizationId, application } },
+      include: { payments: { where: { status: "PENDING" }, take: 1 } },
     }),
     prisma.organization.findUnique({ where: { id: organizationId } }),
     isRazorpayConfigured(),
@@ -36,13 +40,40 @@ export async function POST(
   if (!subscription || !organization) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  if (!configured) {
-    return NextResponse.json({ available: false });
-  }
 
   const now = new Date();
   const periodStart = subscription.endDate && subscription.endDate > now ? subscription.endDate : now;
   const periodEnd = addBillingCycle(periodStart, subscription.billingCycle);
+
+  if (!configured) {
+    // Already requested and still awaiting confirmation — don't spam another one.
+    if (!subscription.payments.length) {
+      await prisma.subscriptionPayment.create({
+        data: {
+          subscriptionId: subscription.id,
+          amount: subscription.price,
+          method: "MANUAL",
+          status: "PENDING",
+          periodStart,
+          periodEnd,
+          notes: "Renewal requested by firm via self-service — awaiting payment collection & confirmation.",
+        },
+      });
+
+      try {
+        await sendRenewalRequestAlert(
+          organization.name,
+          applicationTypeLabel(application),
+          Number(subscription.price),
+          subscription.billingCycle,
+        );
+      } catch (err) {
+        console.error("[renew] Failed to send renewal request alert:", err);
+      }
+    }
+
+    return NextResponse.json({ available: false, requested: true });
+  }
 
   const link = await createPaymentLink({
     amountRupees: Number(subscription.price),

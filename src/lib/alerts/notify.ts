@@ -87,6 +87,27 @@ export async function sendVersionAlert(result: FvuVersionCheckResult): Promise<v
   await Promise.all([sendPlatformAlertEmail(subject, body), sendSlackAlert(subject, body)]);
 }
 
+/**
+ * A firm self-initiated a renewal but no payment gateway is configured yet —
+ * a platform-level concern (like the FVU alert), since it's the super admin
+ * who needs to collect payment offline and confirm it via Record Payment.
+ */
+export async function sendRenewalRequestAlert(
+  organizationName: string,
+  applicationLabel: string,
+  amount: number,
+  billingCycle: string,
+): Promise<void> {
+  const subject = `Renewal requested: ${organizationName} — ${applicationLabel}`;
+  const body =
+    `${organizationName} requested to renew their ${applicationLabel} subscription from their dashboard.\n\n` +
+    `Amount due: ₹${amount.toFixed(2)} (${billingCycle === "MONTHLY" ? "monthly" : "yearly"})\n\n` +
+    `No payment gateway is configured yet, so this needs to be collected offline (bank transfer/UPI/etc) ` +
+    `and confirmed from that firm's page in the admin panel — Products & Subscriptions → Record Payment.`;
+
+  await Promise.all([sendPlatformAlertEmail(subject, body), sendSlackAlert(subject, body)]);
+}
+
 async function sendPlatformAlertEmail(subject: string, body: string): Promise<void> {
   const [config, alertEmailTo] = await Promise.all([getPlatformSmtpConfig(), getAlertEmailTo()]);
   if (!config || !alertEmailTo) return;
