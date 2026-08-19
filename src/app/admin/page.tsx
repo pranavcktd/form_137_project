@@ -12,6 +12,9 @@ export default function AdminPage() {
         actions={
           <div className="flex items-center gap-4">
             <FvuVersionBanner />
+            <LinkButton href="/admin/fvu-updates" variant="secondary">
+              FVU/RPU Updates
+            </LinkButton>
             <LinkButton href="/admin/tax-professionals/new">
               + Onboard a firm
             </LinkButton>

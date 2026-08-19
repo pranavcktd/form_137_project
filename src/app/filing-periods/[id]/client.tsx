@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { DdoRecordForm } from "@/components/ddo-record-form";
 import type { DdoRecordFormInput } from "@/lib/validation/ddoRecord";
 import type { ImportedRow } from "@/lib/excel/parseDdoImport";
 import type { FieldError } from "@/lib/validation/validateField";
 import type { FvuFieldError } from "@/lib/fvu/parseErrorHtml";
+import { resolveFvuErrorTarget } from "@/lib/fvu/errorFieldMap";
 import { checkDiscrepancies } from "@/lib/analytics/discrepancies";
 import { usePagination } from "@/lib/usePagination";
 import { formTypeLabel } from "@/lib/formTypeLabels";
@@ -37,6 +39,7 @@ type FilingPeriod = {
 type Client = {
   departmentName: string;
   ain: string;
+  responsiblePersonEmail: string;
 };
 
 type DdoRecord = DdoRecordFormInput & { id: string; serialNo: number };
@@ -108,6 +111,7 @@ export function FilingPeriodDetailClient({
   filingPeriodId: string;
   fvuBanner?: React.ReactNode;
 }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [filingPeriod, setFilingPeriod] = useState<FilingPeriod | null>(null);
   const [client, setClient] = useState<Client | null>(null);
@@ -127,6 +131,9 @@ export function FilingPeriodDetailClient({
   const [receiptDate, setReceiptDate] = useState("");
   const [savingReceipt, setSavingReceipt] = useState(false);
   const [transactionSearch, setTransactionSearch] = useState("");
+  const [emailingClient, setEmailingClient] = useState(false);
+  const [emailResult, setEmailResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [pendingFocusSerialNo, setPendingFocusSerialNo] = useState<number | null>(null);
 
   const load = () => {
     fetch(`/api/filing-periods/${filingPeriodId}`)
@@ -159,6 +166,25 @@ export function FilingPeriodDetailClient({
 
   const ddoRecordsPage = usePagination(filteredDdoRecords, undefined, transactionSearch);
   const historyPage = usePagination(history);
+
+  // Waits for an in-flight "clear the search box" to actually take effect
+  // (usePagination resets to page 1 whenever its resetKey/search changes)
+  // before jumping to the target record's real page — otherwise that reset
+  // would immediately clobber the page we're about to jump to.
+  useEffect(() => {
+    if (pendingFocusSerialNo === null || transactionSearch !== "") return;
+    const index = ddoRecords.findIndex((r) => r.serialNo === pendingFocusSerialNo);
+    const record = ddoRecords[index];
+    setPendingFocusSerialNo(null);
+    if (!record) return;
+
+    ddoRecordsPage.setPage(Math.floor(index / ddoRecordsPage.pageSize) + 1);
+    setFormMode(record.id);
+    setTimeout(() => {
+      document.getElementById(`ddo-record-${record.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingFocusSerialNo, transactionSearch, ddoRecords]);
 
   if (loading || !filingPeriod) {
     return <LoadingState />;
@@ -361,6 +387,32 @@ export function FilingPeriodDetailClient({
     setReceiptDate("");
     setSavingReceipt(false);
     load();
+  };
+
+  const handleEmailClient = async () => {
+    setEmailingClient(true);
+    setEmailResult(null);
+    const res = await fetch(`/api/filing-periods/${filingPeriodId}/email-client`, { method: "POST" });
+    const body = await res.json();
+    setEmailingClient(false);
+
+    if (!res.ok) {
+      const fieldErrors = body.error?.fieldErrors ? Object.values(body.error.fieldErrors).flat() : [];
+      const message = [...(body.error?.formErrors ?? []), ...fieldErrors].join(" ") || "Could not send this email.";
+      setEmailResult({ ok: false, message: message as string });
+      return;
+    }
+    setEmailResult({ ok: true, message: `Sent to ${body.sentTo}.` });
+  };
+
+  const handleFixError = (error: FvuFieldError) => {
+    const target = resolveFvuErrorTarget(error);
+    if (target.kind === "client") {
+      router.push(`/clients/${filingPeriod.clientId}?focus=${target.fieldKey}`);
+    } else if (target.kind === "ddoRecord") {
+      setTransactionSearch("");
+      setPendingFocusSerialNo(target.serialNo);
+    }
   };
 
   const discrepancies = checkDiscrepancies(
@@ -614,7 +666,7 @@ export function FilingPeriodDetailClient({
         )}
         {ddoRecordsPage.pageItems.map((record) =>
           formMode === record.id && !locked ? (
-            <div key={record.id} className="p-4">
+            <div key={record.id} id={`ddo-record-${record.id}`} className="p-4">
               <DdoRecordForm
                 clientId={filingPeriod.clientId}
                 financialYear={filingPeriod.financialYear}
@@ -625,7 +677,7 @@ export function FilingPeriodDetailClient({
               />
             </div>
           ) : (
-            <div key={record.id} className="flex items-center justify-between p-4">
+            <div key={record.id} id={`ddo-record-${record.id}`} className="flex items-center justify-between p-4">
               <div>
                 <p className="font-medium text-slate-900">
                   {record.serialNo}. {record.tan} &mdash; {record.name}
@@ -683,11 +735,28 @@ export function FilingPeriodDetailClient({
             <div className="mt-3">
               <Alert>
                 <p className="font-medium">{generateState.message ?? "FVU validation failed."}</p>
-                {generateState.errors.map((err, i) => (
-                  <p key={i}>
-                    Line {err.lineNo} ({err.recordType}) &mdash; {err.fieldName}: {err.errorDescription}
-                  </p>
-                ))}
+                <div className="mt-2 space-y-2">
+                  {generateState.errors.map((err, i) => {
+                    const target = resolveFvuErrorTarget(err);
+                    return (
+                      <div key={i} className="flex flex-wrap items-center justify-between gap-2">
+                        <p>
+                          Line {err.lineNo} ({err.recordType}) &mdash; {err.fieldName}: {err.errorDescription}
+                        </p>
+                        {target.kind !== "none" && (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            className="shrink-0 px-2 py-1 text-xs"
+                            onClick={() => handleFixError(err)}
+                          >
+                            {target.kind === "client" ? "Fix on Client Profile" : "Fix this DDO record"}
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </Alert>
             </div>
           )}
@@ -734,6 +803,25 @@ export function FilingPeriodDetailClient({
             </Button>
           )}
         </form>
+
+        {filingPeriod.receiptNumber && filingPeriod.receiptDate && (
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="button" variant="secondary" disabled={emailingClient} onClick={handleEmailClient}>
+                {emailingClient ? "Sending..." : "Email Client"}
+              </Button>
+              <p className="text-xs text-slate-500">
+                Sends the receipt/ack details and an Excel of this period&apos;s DDO transactions to{" "}
+                {client?.responsiblePersonEmail}.
+              </p>
+            </div>
+            {emailResult && (
+              <div className="mt-3">
+                <Alert tone={emailResult.ok ? "green" : "red"}>{emailResult.message}</Alert>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
 
       <div className="mt-8">

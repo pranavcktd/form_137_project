@@ -141,6 +141,7 @@ export function ClientProfileFields({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Accounts Office Identification No. (AIN)">
             <input
+              id="ain"
               className={inputClass}
               required
               maxLength={7}
@@ -150,8 +151,9 @@ export function ClientProfileFields({
             />
           </Field>
 
-          <Field label="TAN (optional)">
+          <Field label="TAN (mandatory from FY2026-27 onward)">
             <input
+              id="tan"
               className={inputClass}
               maxLength={10}
               value={values.tan}
@@ -162,6 +164,7 @@ export function ClientProfileFields({
 
           <Field label="Government Category">
             <select
+              id="govtCategory"
               className={inputClass}
               value={values.govtCategory}
               onChange={(e) =>
@@ -176,6 +179,7 @@ export function ClientProfileFields({
           {values.govtCategory === "CENTRAL" && (
             <Field label="Ministry Name">
               <select
+                id="ministryName"
                 className={inputClass}
                 value={values.ministryName}
                 onChange={(e) => set("ministryName", e.target.value)}
@@ -193,6 +197,7 @@ export function ClientProfileFields({
           {values.govtCategory === "CENTRAL" && (
             <Field label="Sub Ministry Name">
               <select
+                id="subMinistryName"
                 className={inputClass}
                 value={values.subMinistryName}
                 onChange={(e) => set("subMinistryName", e.target.value)}
@@ -209,6 +214,7 @@ export function ClientProfileFields({
 
           <Field label="Department Name">
             <input
+              id="departmentName"
               className={inputClass}
               required
               value={values.departmentName}
@@ -225,6 +231,7 @@ export function ClientProfileFields({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Name (FY2025-26 and earlier filings)">
             <input
+              id="responsiblePersonName"
               className={inputClass}
               value={values.responsiblePersonName}
               onChange={(e) => set("responsiblePersonName", e.target.value)}
@@ -232,6 +239,7 @@ export function ClientProfileFields({
           </Field>
           <Field label="Designation">
             <input
+              id="responsiblePersonDesignation"
               className={inputClass}
               required
               value={values.responsiblePersonDesignation}
@@ -242,6 +250,7 @@ export function ClientProfileFields({
           </Field>
           <Field label="First Name (FY2026-27 onward filings)">
             <input
+              id="responsiblePersonFirstName"
               className={inputClass}
               value={values.responsiblePersonFirstName}
               onChange={(e) => set("responsiblePersonFirstName", e.target.value)}
@@ -249,6 +258,7 @@ export function ClientProfileFields({
           </Field>
           <Field label="Middle Name (FY2026-27 onward filings)">
             <input
+              id="responsiblePersonMiddleName"
               className={inputClass}
               value={values.responsiblePersonMiddleName}
               onChange={(e) => set("responsiblePersonMiddleName", e.target.value)}
@@ -256,6 +266,7 @@ export function ClientProfileFields({
           </Field>
           <Field label="Last Name (FY2026-27 onward filings)">
             <input
+              id="responsiblePersonLastName"
               className={inputClass}
               value={values.responsiblePersonLastName}
               onChange={(e) => set("responsiblePersonLastName", e.target.value)}
@@ -263,6 +274,7 @@ export function ClientProfileFields({
           </Field>
           <Field label="Country Code (FY2026-27 onward filings)">
             <select
+              id="countryCode"
               className={inputClass}
               value={values.countryCode}
               onChange={(e) => set("countryCode", e.target.value)}
@@ -277,6 +289,7 @@ export function ClientProfileFields({
           </Field>
           <Field label="Address Line 1">
             <input
+              id="responsiblePersonAddress1"
               className={inputClass}
               required
               value={values.responsiblePersonAddress1}
@@ -285,6 +298,7 @@ export function ClientProfileFields({
           </Field>
           <Field label="Address Line 2">
             <input
+              id="responsiblePersonAddress2"
               className={inputClass}
               value={values.responsiblePersonAddress2}
               onChange={(e) => set("responsiblePersonAddress2", e.target.value)}
@@ -292,6 +306,7 @@ export function ClientProfileFields({
           </Field>
           <Field label="City">
             <input
+              id="responsiblePersonCity"
               className={inputClass}
               required
               value={values.responsiblePersonCity}
@@ -300,6 +315,7 @@ export function ClientProfileFields({
           </Field>
           <Field label="State">
             <select
+              id="responsiblePersonState"
               className={inputClass}
               required
               value={values.responsiblePersonState}
@@ -315,6 +331,7 @@ export function ClientProfileFields({
           </Field>
           <Field label="PIN Code">
             <input
+              id="responsiblePersonPin"
               className={inputClass}
               required
               maxLength={6}
@@ -327,6 +344,7 @@ export function ClientProfileFields({
           <Field label="Phone (STD Code + Number)">
             <div className="flex gap-2">
               <input
+                id="responsiblePersonStdCode"
                 className={`${inputClass} w-20`}
                 placeholder="STD"
                 maxLength={5}
@@ -339,6 +357,7 @@ export function ClientProfileFields({
                 }
               />
               <input
+                id="responsiblePersonPhone"
                 className={inputClass}
                 placeholder="Phone number"
                 maxLength={10}
@@ -354,6 +373,7 @@ export function ClientProfileFields({
           </Field>
           <Field label="Mobile Number">
             <input
+              id="responsiblePersonMobile"
               className={inputClass}
               maxLength={10}
               value={values.responsiblePersonMobile}
@@ -367,6 +387,7 @@ export function ClientProfileFields({
           </Field>
           <Field label="Email">
             <input
+              id="responsiblePersonEmail"
               type="email"
               className={inputClass}
               required

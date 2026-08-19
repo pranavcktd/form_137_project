@@ -358,6 +358,32 @@ model FvuVersionStatus {
   checkedAt        DateTime @default(now())
 }
 
+enum FvuPackageAnalysisStatus {
+  ANALYZING
+  DONE
+  FAILED
+}
+
+/**
+ * A new FVU/RPU package the super admin uploaded (as downloaded from
+ * Protean) so its actual validation logic can be decompiled and diffed
+ * against the currently-vendored copy — structural signal only (which
+ * fields/error codes/classes changed), not an automatic schema/code update.
+ * See src/lib/fvu/analyzePackage.ts.
+ */
+model FvuPackageUpload {
+  id               String                   @id @default(cuid())
+  uploadedByName   String
+  uploadedByEmail  String
+  originalFilename String
+  storagePath      String
+  status           FvuPackageAnalysisStatus @default(ANALYZING)
+  errorMessage     String?
+  /** Structured diff report — see FvuPackageAnalysis in analyzePackage.ts. */
+  analysisResult   Json?
+  createdAt        DateTime                 @default(now())
+}
+
 /**
  * Singleton row (id="singleton") holding platform-level notification config,
  * set by the super admin from their own Profile page instead of .env — so

@@ -56,7 +56,18 @@ async function getSlackWebhookUrl(): Promise<string | null> {
   return settings?.slackWebhookUrl || process.env.SLACK_WEBHOOK_URL || null;
 }
 
-async function sendViaSmtp(config: ResolvedSmtpConfig, to: string, subject: string, text: string): Promise<void> {
+interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+}
+
+async function sendViaSmtp(
+  config: ResolvedSmtpConfig,
+  to: string,
+  subject: string,
+  text: string,
+  attachments?: EmailAttachment[],
+): Promise<void> {
   const transport = nodemailer.createTransport({
     host: config.host,
     port: config.port,
@@ -69,6 +80,7 @@ async function sendViaSmtp(config: ResolvedSmtpConfig, to: string, subject: stri
     to,
     subject,
     text,
+    attachments,
   });
 }
 
@@ -151,6 +163,50 @@ export async function sendPasswordResetEmail(
       `Email: ${toEmail}\n` +
       `Temporary password: ${temporaryPassword}\n\n` +
       `${validityNote} If you didn't request this, contact your administrator.`,
+  );
+
+  return true;
+}
+
+/**
+ * Emails a filed return's details to the Client's own responsible-person address
+ * (the government office contact, not a Nex login) — the firm's own SMTP, since
+ * this is correspondence the firm sends to the entity it files for, same as a
+ * staff password reset. Returns whether it actually sent, so the caller (an
+ * explicit button click, not a background job) can show a real error rather
+ * than silently claiming success.
+ */
+export async function sendFilingReturnEmail(params: {
+  toEmail: string;
+  toName: string;
+  organizationId: string;
+  departmentName: string;
+  ain: string;
+  financialYear: number;
+  month: number;
+  monthLabel: string;
+  statementType: string;
+  receiptNumber: string;
+  receiptDate: string;
+  attachments: EmailAttachment[];
+}): Promise<boolean> {
+  const config = await getOrgSmtpConfig(params.organizationId);
+  if (!config) return false;
+
+  const fyLabel = `FY ${params.financialYear}-${String((params.financialYear + 1) % 100).padStart(2, "0")}`;
+
+  await sendViaSmtp(
+    config,
+    params.toEmail,
+    `Form 137/24G filed — ${fyLabel}, ${params.monthLabel} (${params.departmentName})`,
+    `Hi ${params.toName},\n\n` +
+      `This is to inform you that the Form 137/24G statement for ${params.departmentName} (AIN ${params.ain}) ` +
+      `has been filed for ${fyLabel}, ${params.monthLabel} (${params.statementType}).\n\n` +
+      `Receipt / Acknowledgement Number: ${params.receiptNumber}\n` +
+      `Receipt Date: ${params.receiptDate}\n\n` +
+      `The attached Excel sheet lists every DDO transaction included in this filing` +
+      `${params.attachments.length > 1 ? ", along with the filing receipt" : ""}.`,
+    params.attachments,
   );
 
   return true;

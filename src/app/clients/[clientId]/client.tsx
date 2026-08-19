@@ -59,6 +59,18 @@ export function ClientProfileEditor({ clientId }: { clientId: string }) {
       });
   }, [clientId]);
 
+  // Arriving from a "fix this field" link on an FVU error (e.g. from a filing
+  // period's Generate & Validate failure) — scroll to and focus that exact
+  // field once the profile has actually loaded and rendered it.
+  useEffect(() => {
+    if (loading) return;
+    const focusKey = new URLSearchParams(window.location.search).get("focus");
+    if (!focusKey) return;
+    const el = document.getElementById(focusKey);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    el?.focus();
+  }, [loading]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
