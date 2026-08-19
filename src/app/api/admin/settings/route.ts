@@ -23,6 +23,9 @@ export async function GET() {
     alertEmailTo: settings?.alertEmailTo ?? "",
     slackWebhookUrl: settings?.slackWebhookUrl ?? "",
     hideUnsubscribedModules: settings?.hideUnsubscribedModules ?? false,
+    razorpayKeyId: settings?.razorpayKeyId ?? "",
+    hasRazorpayKeySecret: Boolean(settings?.razorpayKeySecret),
+    hasRazorpayWebhookSecret: Boolean(settings?.razorpayWebhookSecret),
   });
 }
 
@@ -36,8 +39,18 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { smtpHost, smtpPort, smtpUser, smtpPassword, alertEmailTo, slackWebhookUrl, hideUnsubscribedModules } =
-    parsed.data;
+  const {
+    smtpHost,
+    smtpPort,
+    smtpUser,
+    smtpPassword,
+    alertEmailTo,
+    slackWebhookUrl,
+    hideUnsubscribedModules,
+    razorpayKeyId,
+    razorpayKeySecret,
+    razorpayWebhookSecret,
+  } = parsed.data;
 
   // Each field is only touched when the caller actually sent it, so a
   // partial PATCH (e.g. just the display toggle from its own settings card)
@@ -50,6 +63,9 @@ export async function PATCH(request: Request) {
     ...(slackWebhookUrl !== undefined && { slackWebhookUrl: slackWebhookUrl || null }),
     ...(smtpPassword ? { smtpPassword } : {}),
     ...(hideUnsubscribedModules !== undefined && { hideUnsubscribedModules }),
+    ...(razorpayKeyId !== undefined && { razorpayKeyId: razorpayKeyId || null }),
+    ...(razorpayKeySecret ? { razorpayKeySecret } : {}),
+    ...(razorpayWebhookSecret ? { razorpayWebhookSecret } : {}),
   };
 
   await prisma.platformSettings.upsert({

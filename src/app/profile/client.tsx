@@ -195,6 +195,7 @@ export function ProfileClient() {
 
       {profile.role === "SUPER_ADMIN" && <ModuleVisibilitySettingsCard />}
       {profile.role === "SUPER_ADMIN" && <PlatformSettingsCard />}
+      {profile.role === "SUPER_ADMIN" && <RazorpaySettingsCard />}
       {profile.role === "ADMIN" && <FirmSmtpSettingsCard />}
     </div>
   );
@@ -413,6 +414,147 @@ function PlatformSettingsCard() {
 
         <Button type="submit" disabled={saving}>
           {saving ? "Saving..." : "Save Notification Settings"}
+        </Button>
+      </form>
+    </Card>
+  );
+}
+
+type RazorpaySettings = {
+  razorpayKeyId: string;
+  hasRazorpayKeySecret: boolean;
+  hasRazorpayWebhookSecret: boolean;
+};
+
+function RazorpaySettingsCard() {
+  const [settings, setSettings] = useState<RazorpaySettings | null>(null);
+  const [keyId, setKeyId] = useState("");
+  const [keySecret, setKeySecret] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [errors, setErrors] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((res) => res.json())
+      .then((data: RazorpaySettings) => {
+        setSettings(data);
+        setKeyId(data.razorpayKeyId);
+      });
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setMessage(null);
+    setErrors([]);
+
+    const res = await fetch("/api/admin/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ razorpayKeyId: keyId, razorpayKeySecret: keySecret, razorpayWebhookSecret: webhookSecret }),
+    });
+    setSaving(false);
+
+    if (!res.ok) {
+      const body = await res.json();
+      const fieldErrors = body.error?.fieldErrors ? Object.values(body.error.fieldErrors).flat() : [];
+      setErrors([...(body.error?.formErrors ?? []), ...fieldErrors] as string[]);
+      return;
+    }
+
+    setMessage("Razorpay settings saved.");
+    setSettings((prev) =>
+      prev
+        ? {
+            ...prev,
+            razorpayKeyId: keyId,
+            hasRazorpayKeySecret: prev.hasRazorpayKeySecret || keySecret.length > 0,
+            hasRazorpayWebhookSecret: prev.hasRazorpayWebhookSecret || webhookSecret.length > 0,
+          }
+        : prev,
+    );
+    setKeySecret("");
+    setWebhookSecret("");
+  };
+
+  if (!settings) return null;
+
+  const configured = Boolean(settings.razorpayKeyId && settings.hasRazorpayKeySecret);
+
+  return (
+    <Card className="p-6">
+      <div className="mb-1 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-slate-900">Razorpay (Subscription Payments)</h3>
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+            configured ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"
+          }`}
+        >
+          {configured ? "Configured" : "Not configured"}
+        </span>
+      </div>
+      <p className="mb-4 text-sm text-slate-500">
+        Used to generate payment links firms can pay from their own dashboard to renew a product
+        subscription. Until this is configured, firms see a message to contact you instead of a
+        working &ldquo;Renew&rdquo; button. Find your keys under Settings &rarr; API Keys in the
+        Razorpay dashboard, and set the webhook URL there to{" "}
+        <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">/api/webhooks/razorpay</code>{" "}
+        (event: <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">payment_link.paid</code>).
+      </p>
+      <form onSubmit={handleSave} className="space-y-4">
+        {errors.length > 0 && (
+          <Alert>
+            <ul className="list-inside list-disc">
+              {errors.map((err, i) => (
+                <li key={i}>{err}</li>
+              ))}
+            </ul>
+          </Alert>
+        )}
+        {message && <Alert tone="green">{message}</Alert>}
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-1">
+            <FieldLabel>Key ID</FieldLabel>
+            <input
+              className={inputClass}
+              placeholder="rzp_live_..."
+              value={keyId}
+              onChange={(e) => setKeyId(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <FieldLabel>
+              Key Secret{" "}
+              {settings.hasRazorpayKeySecret && <span className="text-xs text-emerald-600">(saved — leave blank to keep it)</span>}
+            </FieldLabel>
+            <input
+              type="password"
+              className={inputClass}
+              placeholder={settings.hasRazorpayKeySecret ? "••••••••••••••••" : ""}
+              value={keySecret}
+              onChange={(e) => setKeySecret(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <FieldLabel>
+              Webhook Secret{" "}
+              {settings.hasRazorpayWebhookSecret && <span className="text-xs text-emerald-600">(saved — leave blank to keep it)</span>}
+            </FieldLabel>
+            <input
+              type="password"
+              className={inputClass}
+              placeholder={settings.hasRazorpayWebhookSecret ? "••••••••••••••••" : ""}
+              value={webhookSecret}
+              onChange={(e) => setWebhookSecret(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <Button type="submit" disabled={saving}>
+          {saving ? "Saving..." : "Save Razorpay Settings"}
         </Button>
       </form>
     </Card>

@@ -99,54 +99,37 @@ async function sendPlatformAlertEmail(subject: string, body: string): Promise<vo
  * vars). Returns whether an email was actually sent — SMTP is optional in
  * this app, so callers should fall back to showing the temporary password
  * directly in the UI when this returns false.
+ *
+ * `keepsOldPasswordValid` reflects how the caller actually stored it: an
+ * admin-triggered reset overwrites the password immediately, but a
+ * self-service "forgot password" one is held as a pending alternative — the
+ * old password still works until this temporary one is actually used (see
+ * lib/auth.ts) — so the email should say so accurately rather than falsely
+ * claiming the old password stopped working right away.
  */
 export async function sendPasswordResetEmail(
   toEmail: string,
   toName: string,
   temporaryPassword: string,
   organizationId: string,
+  keepsOldPasswordValid = false,
 ): Promise<boolean> {
   const config = await getOrgSmtpConfig(organizationId);
   if (!config) return false;
+
+  const validityNote = keepsOldPasswordValid
+    ? "Your existing password still works until you sign in with this one — once you do, you'll be required to set a new password."
+    : "You'll be required to set a new password the next time you sign in.";
 
   await sendViaSmtp(
     config,
     toEmail,
     "Your Nex password has been reset",
     `Hi ${toName},\n\n` +
-      `Your password has been reset by your administrator.\n\n` +
+      `A temporary password was issued for your Nex account (either by your administrator, or via "Forgot password?" at login).\n\n` +
       `Email: ${toEmail}\n` +
       `Temporary password: ${temporaryPassword}\n\n` +
-      `You'll be required to set a new password the next time you sign in.`,
-  );
-
-  return true;
-}
-
-/**
- * Emails a self-service "forgot password" link, using the user's own
- * firm's SMTP config (falling back to the platform's, then env vars).
- * Returns whether an email was actually sent — if no SMTP is configured
- * anywhere, self-service reset simply isn't available and the caller
- * should tell the user to contact an admin instead.
- */
-export async function sendPasswordResetLinkEmail(
-  toEmail: string,
-  toName: string,
-  resetUrl: string,
-  organizationId: string,
-): Promise<boolean> {
-  const config = await getOrgSmtpConfig(organizationId);
-  if (!config) return false;
-
-  await sendViaSmtp(
-    config,
-    toEmail,
-    "Reset your Nex password",
-    `Hi ${toName},\n\n` +
-      `Someone requested a password reset for your Nex account (${toEmail}).\n\n` +
-      `Reset your password: ${resetUrl}\n\n` +
-      `This link expires in 30 minutes and can only be used once. If you didn't request this, you can ignore this email — your password won't be changed.`,
+      `${validityNote} If you didn't request this, contact your administrator.`,
   );
 
   return true;

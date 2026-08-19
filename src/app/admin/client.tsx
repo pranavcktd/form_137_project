@@ -4,7 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Badge, Button, Card, EmptyState, LoadingState, Pagination, inputClass } from "@/components/ui";
 import { applicationTypeLabel } from "@/lib/applicationTypes";
+import { subscriptionsToFormState, subscriptionStateToPayload } from "@/components/subscription-fields";
 import { usePagination } from "@/lib/usePagination";
+
+type Subscription = {
+  application: string;
+  price: string;
+  billingCycle: "MONTHLY" | "YEARLY";
+  startDate: string | null;
+  endDate: string | null;
+  status: "PENDING_PAYMENT" | "ACTIVE" | "CANCELLED";
+};
 
 type Firm = {
   id: string;
@@ -12,12 +22,14 @@ type Firm = {
   status: "ACTIVE" | "DISABLED";
   contactEmail: string | null;
   contactPhone: string | null;
-  enabledApplications: string[];
-  subscriptionStartDate: string | null;
-  subscriptionEndDate: string | null;
+  subscriptions: Subscription[];
   _count: { clients: number; users: number };
   users: { email: string; name: string }[];
 };
+
+function isActive(sub: Subscription): boolean {
+  return sub.status === "ACTIVE" && (!sub.endDate || new Date(sub.endDate) >= new Date());
+}
 
 export function AdminFirmsListClient() {
   const [firms, setFirms] = useState<Firm[]>([]);
@@ -46,9 +58,7 @@ export function AdminFirmsListClient() {
         contactEmail: firm.contactEmail ?? "",
         contactPhone: firm.contactPhone ?? "",
         status: firm.status === "ACTIVE" ? "DISABLED" : "ACTIVE",
-        enabledApplications: firm.enabledApplications,
-        subscriptionStartDate: firm.subscriptionStartDate ?? "",
-        subscriptionEndDate: firm.subscriptionEndDate ?? "",
+        subscriptions: subscriptionStateToPayload(subscriptionsToFormState(firm.subscriptions)),
       }),
     });
     setBusyId(null);
@@ -128,8 +138,8 @@ export function AdminFirmsListClient() {
               <tr className="border-b border-slate-200 text-slate-500">
                 <th className="px-4 py-2 font-medium">Firm</th>
                 <th className="px-4 py-2 font-medium">Admin</th>
-                <th className="px-4 py-2 font-medium">Applications</th>
-                <th className="px-4 py-2 font-medium">Subscription Ends</th>
+                <th className="px-4 py-2 font-medium">Products</th>
+                <th className="px-4 py-2 font-medium">Next Renewal</th>
                 <th className="px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2 font-medium">Actions</th>
               </tr>
@@ -148,13 +158,30 @@ export function AdminFirmsListClient() {
                     <br />
                     {firm.users[0]?.email}
                   </td>
-                  <td className="px-4 py-2 text-slate-500">
-                    {firm.enabledApplications.map(applicationTypeLabel).join(", ")}
+                  <td className="px-4 py-2">
+                    <div className="flex flex-wrap gap-1">
+                      {firm.subscriptions.filter((s) => s.status !== "CANCELLED").length === 0 && (
+                        <span className="text-slate-400">—</span>
+                      )}
+                      {firm.subscriptions
+                        .filter((s) => s.status !== "CANCELLED")
+                        .map((s) => (
+                          <Badge key={s.application} tone={isActive(s) ? "green" : "amber"}>
+                            {applicationTypeLabel(s.application)}
+                          </Badge>
+                        ))}
+                    </div>
                   </td>
                   <td className="px-4 py-2 text-slate-500">
-                    {firm.subscriptionEndDate
-                      ? new Date(firm.subscriptionEndDate).toLocaleDateString()
-                      : "—"}
+                    {(() => {
+                      const dates = firm.subscriptions
+                        .filter(isActive)
+                        .map((s) => s.endDate)
+                        .filter((d): d is string => d !== null);
+                      if (dates.length === 0) return "—";
+                      const nearest = new Date(Math.min(...dates.map((d) => new Date(d).getTime())));
+                      return nearest.toLocaleDateString();
+                    })()}
                   </td>
                   <td className="px-4 py-2">
                     <Badge tone={firm.status === "ACTIVE" ? "green" : "red"}>

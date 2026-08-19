@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Badge, Card, EmptyState, FieldLabel, LoadingState, Pagination, inputClass } from "@/components/ui";
-import { listFinancialYears } from "@/lib/financialYear";
+import { listFinancialYears, monthsInQuarter, QUARTERS } from "@/lib/financialYear";
 import { usePagination } from "@/lib/usePagination";
 import { formTypeLabel } from "@/lib/formTypeLabels";
 
@@ -27,6 +27,7 @@ export function FyWiseReportClient({ clientId }: { clientId: string }) {
   const [financialYear, setFinancialYear] = useState(fyOptions[0]?.value);
   const [result, setResult] = useState<{ financialYear: number; rows: Row[] } | null>(null);
   const [search, setSearch] = useState("");
+  const [quarter, setQuarter] = useState(0);
 
   useEffect(() => {
     if (!financialYear) return;
@@ -43,16 +44,19 @@ export function FyWiseReportClient({ clientId }: { clientId: string }) {
 
   const rows = result?.financialYear === financialYear ? result.rows : null;
 
-  const totalDeducted = rows?.reduce((sum, r) => sum + r.taxDeducted, 0) ?? 0;
-  const totalRemitted = rows?.reduce((sum, r) => sum + r.totalRemitted, 0) ?? 0;
+  const quarterMonths = monthsInQuarter(quarter);
+  const quarterRows = rows ? (quarterMonths.length ? rows.filter((r) => quarterMonths.includes(r.month)) : rows) : null;
+
+  const totalDeducted = quarterRows?.reduce((sum, r) => sum + r.taxDeducted, 0) ?? 0;
+  const totalRemitted = quarterRows?.reduce((sum, r) => sum + r.totalRemitted, 0) ?? 0;
 
   const searchTerm = search.trim().toLowerCase();
-  const filteredRows = rows
+  const filteredRows = quarterRows
     ? searchTerm
-      ? rows.filter((r) => [r.tan, r.name].some((v) => (v ?? "").toLowerCase().includes(searchTerm)))
-      : rows
+      ? quarterRows.filter((r) => [r.tan, r.name].some((v) => (v ?? "").toLowerCase().includes(searchTerm)))
+      : quarterRows
     : [];
-  const rowsPage = usePagination(filteredRows, undefined, `${financialYear}::${search}`);
+  const rowsPage = usePagination(filteredRows, undefined, `${financialYear}::${quarter}::${search}`);
 
   return (
     <div>
@@ -72,6 +76,20 @@ export function FyWiseReportClient({ clientId }: { clientId: string }) {
           </select>
         </div>
         <div className="space-y-1">
+          <FieldLabel>Quarter</FieldLabel>
+          <select
+            className={inputClass}
+            value={quarter}
+            onChange={(e) => setQuarter(Number(e.target.value))}
+          >
+            {QUARTERS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
           <FieldLabel>Search DDO (name or TAN)</FieldLabel>
           <input
             className={inputClass}
@@ -80,7 +98,7 @@ export function FyWiseReportClient({ clientId }: { clientId: string }) {
             placeholder="Type a DDO name or TAN..."
           />
         </div>
-        {rows && rows.length > 0 && (
+        {quarterRows && quarterRows.length > 0 && (
           <div className="ml-auto flex items-center gap-3">
             <Badge tone="indigo">Total Deducted: {totalDeducted.toFixed(2)}</Badge>
             <Badge tone="green">Total Remitted: {totalRemitted.toFixed(2)}</Badge>
@@ -90,7 +108,7 @@ export function FyWiseReportClient({ clientId }: { clientId: string }) {
           </div>
         )}
         <a
-          href={`/api/clients/${clientId}/reports/fy-wise?financialYear=${financialYear}&format=xlsx`}
+          href={`/api/clients/${clientId}/reports/fy-wise?financialYear=${financialYear}&quarter=${quarter}&format=xlsx`}
           className="text-sm text-indigo-600 hover:underline"
         >
           Export to Excel
@@ -102,6 +120,8 @@ export function FyWiseReportClient({ clientId }: { clientId: string }) {
           <LoadingState />
         ) : rows.length === 0 ? (
           <EmptyState>No transactions filed for this financial year.</EmptyState>
+        ) : quarterRows && quarterRows.length === 0 ? (
+          <EmptyState>No transactions filed for {QUARTERS.find((q) => q.value === quarter)?.label}.</EmptyState>
         ) : filteredRows.length === 0 ? (
           <EmptyState>No transactions match &ldquo;{search}&rdquo;.</EmptyState>
         ) : (

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { firmEditSchema } from "@/lib/validation/organization";
+import { syncFirmSubscriptions } from "@/lib/subscriptions";
 
 async function requireSuperAdmin() {
   const session = await auth();
@@ -33,6 +34,9 @@ export async function GET(
           createdAt: true,
         },
       },
+      subscriptions: {
+        include: { payments: { orderBy: { createdAt: "desc" } } },
+      },
     },
   });
   if (!firm) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -54,23 +58,30 @@ export async function PATCH(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { firmName, contactEmail, contactPhone, status, enabledApplications, subscriptionStartDate, subscriptionEndDate } =
-    parsed.data;
+  const { firmName, contactEmail, contactPhone, status, subscriptions } = parsed.data;
 
-  const firm = await prisma.organization.update({
+  await prisma.organization.update({
     where: { id },
     data: {
       name: firmName,
       contactEmail: contactEmail || null,
       contactPhone: contactPhone || null,
       status,
-      enabledApplications,
-      subscriptionStartDate: subscriptionStartDate ? new Date(subscriptionStartDate) : null,
-      subscriptionEndDate: subscriptionEndDate ? new Date(subscriptionEndDate) : null,
     },
   });
 
-  return NextResponse.json(firm);
+  await syncFirmSubscriptions(
+    id,
+    subscriptions.map((s) => ({
+      application: s.application,
+      price: s.price,
+      billingCycle: s.billingCycle,
+      startDate: s.startDate ? new Date(s.startDate) : null,
+      endDate: s.endDate ? new Date(s.endDate) : null,
+    })),
+  );
+
+  return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getEntitledApplications } from "@/lib/subscriptions";
 
 export async function GET() {
   const session = await auth();
@@ -8,9 +9,10 @@ export async function GET() {
 
   const organization = await prisma.organization.findUnique({
     where: { id: session.user.organizationId },
-    select: { id: true, name: true, enabledApplications: true },
+    select: { id: true, name: true },
   });
   if (!organization) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  return NextResponse.json(organization);
+  const enabledApplications = await getEntitledApplications(organization.id);
+  return NextResponse.json({ ...organization, enabledApplications });
 }

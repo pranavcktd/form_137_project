@@ -1,7 +1,9 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/forgot-password", "/reset-password"];
+// /api/webhooks is called by external services (e.g. Razorpay) with no session cookie —
+// it authenticates each request itself (signature verification), not via login.
+const PUBLIC_PATHS = ["/login", "/forgot-password", "/api/webhooks"];
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth;

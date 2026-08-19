@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { prisma } from "@/lib/prisma";
 import { requireClient } from "@/lib/authz";
-import { currentFinancialYear } from "@/lib/financialYear";
+import { currentFinancialYear, monthsInQuarter } from "@/lib/financialYear";
 import { formTypeLabel } from "@/lib/formTypeLabels";
 
 const MONTHS = [
@@ -10,9 +10,10 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-async function loadReportRows(clientId: string, financialYear: number) {
+async function loadReportRows(clientId: string, financialYear: number, quarter: number) {
+  const months = monthsInQuarter(quarter);
   const filingPeriods = await prisma.filingPeriod.findMany({
-    where: { clientId, financialYear },
+    where: { clientId, financialYear, ...(months.length && { month: { in: months } }) },
     orderBy: { month: "asc" },
     include: { ddoRecords: { include: { ddoMaster: true }, orderBy: { serialNo: "asc" } } },
   });
@@ -42,15 +43,19 @@ export async function GET(
 
   const url = new URL(request.url);
   const financialYear = Number(url.searchParams.get("financialYear")) || currentFinancialYear();
-  const rows = await loadReportRows(clientId, financialYear);
+  const quarter = Number(url.searchParams.get("quarter")) || 0;
+  const rows = await loadReportRows(clientId, financialYear, quarter);
 
   const format = url.searchParams.get("format");
   if (format !== "xlsx") {
-    return NextResponse.json({ financialYear, rows });
+    return NextResponse.json({ financialYear, quarter, rows });
   }
 
+  const sheetName = quarter
+    ? `FY ${financialYear}-${String((financialYear + 1) % 100).padStart(2, "0")} Q${quarter}`
+    : `FY ${financialYear}-${String((financialYear + 1) % 100).padStart(2, "0")}`;
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet(`FY ${financialYear}-${String((financialYear + 1) % 100).padStart(2, "0")}`);
+  const sheet = workbook.addWorksheet(sheetName);
   sheet.addRow(["Month", "Statement Type", "TAN", "DDO Name", "Form Type", "Tax Deducted", "Total Remitted", "Difference"]);
   sheet.getRow(1).font = { bold: true };
   for (const r of rows) {
@@ -74,7 +79,7 @@ export async function GET(
     status: 200,
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="fy-wise-report-${financialYear}-${client.departmentName.replace(/\s+/g, "-")}.xlsx"`,
+      "Content-Disposition": `attachment; filename="fy-wise-report-${financialYear}${quarter ? `-Q${quarter}` : ""}-${client.departmentName.replace(/\s+/g, "-")}.xlsx"`,
     },
   });
 }

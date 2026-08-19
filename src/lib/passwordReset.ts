@@ -1,18 +1,35 @@
 import crypto from "crypto";
 
-/** Self-service reset links expire after 30 minutes. */
-export const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
+/** A self-service temporary password stays valid (alongside the existing password)
+ *  for 24 hours before it expires unused. */
+export const PENDING_PASSWORD_TTL_MS = 24 * 60 * 60 * 1000;
 
-/**
- * The raw token goes in the emailed link; only its hash is ever persisted
- * (same principle as a password hash) so a database compromise alone
- * can't be used to reset anyone's account.
- */
-export function generateResetToken(): { rawToken: string; tokenHash: string } {
-  const rawToken = crypto.randomBytes(32).toString("hex");
-  return { rawToken, tokenHash: hashResetToken(rawToken) };
+const UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no I/O — avoids look-alike confusion
+const LOWER = "abcdefghijkmnpqrstuvwxyz"; // no l
+const DIGITS = "23456789"; // no 0/1
+const SYMBOLS = "!@#$%&*";
+const ALL = UPPER + LOWER + DIGITS + SYMBOLS;
+
+function randomChar(alphabet: string): string {
+  return alphabet[crypto.randomInt(alphabet.length)];
 }
 
-export function hashResetToken(rawToken: string): string {
-  return crypto.createHash("sha256").update(rawToken).digest("hex");
+/**
+ * A cryptographically random one-time password for the self-service "forgot
+ * password" flow — unlike an admin-triggered reset (which an authenticated
+ * admin can see on-screen), this is emailed straight to an unauthenticated
+ * requester, so it must actually be unguessable rather than a shared default.
+ * Guarantees at least one of each character class, 12 characters total.
+ */
+export function generateTemporaryPassword(): string {
+  const required = [randomChar(UPPER), randomChar(LOWER), randomChar(DIGITS), randomChar(SYMBOLS)];
+  const rest = Array.from({ length: 8 }, () => randomChar(ALL));
+  const chars = [...required, ...rest];
+
+  // Fisher-Yates shuffle so the fixed-class characters aren't always in the same positions.
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join("");
 }

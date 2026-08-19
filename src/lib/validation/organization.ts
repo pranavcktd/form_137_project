@@ -52,7 +52,22 @@ export const clientProfileSchema = z.object({
 
 export type ClientProfileInput = z.infer<typeof clientProfileSchema>;
 
-const APPLICATION_TYPE_KEYS = ["FORM137", "TDS", "GST"] as const;
+export const APPLICATION_TYPE_KEYS = ["FORM137", "TDS", "GST"] as const;
+
+export const billingCycleSchema = z.enum(["MONTHLY", "YEARLY"]);
+
+/** One product's subscription terms — a firm's overall subscription is an array of
+ *  these, one per application it's actually subscribed to (an application left out
+ *  of the array is treated as not subscribed / cancelled). */
+export const subscriptionEntrySchema = z.object({
+  application: z.enum(APPLICATION_TYPE_KEYS),
+  price: z.coerce.number().min(0, "Price can't be negative"),
+  billingCycle: billingCycleSchema,
+  startDate: z.string().optional().or(z.literal("")),
+  endDate: z.string().optional().or(z.literal("")),
+});
+
+export type SubscriptionEntryFormInput = z.infer<typeof subscriptionEntrySchema>;
 
 /** Platform-admin-only: onboarding a new Tax Professional firm + its first admin user. */
 export const firmOnboardingSchema = z.object({
@@ -62,25 +77,32 @@ export const firmOnboardingSchema = z.object({
   adminName: z.string().min(1, "Admin name is required"),
   adminEmail: z.string().email("Enter a valid email address"),
   adminPassword: z.string().min(8, "Password must be at least 8 characters"),
-  enabledApplications: z.array(z.enum(APPLICATION_TYPE_KEYS)).min(1, "Select at least one application"),
-  subscriptionStartDate: z.string().optional().or(z.literal("")),
-  subscriptionEndDate: z.string().optional().or(z.literal("")),
+  subscriptions: z.array(subscriptionEntrySchema).min(1, "Select at least one application"),
 });
 
 export type FirmOnboardingInput = z.infer<typeof firmOnboardingSchema>;
 
-/** Platform-admin-only: editing an existing firm's profile/subscription/entitlements. */
+/** Platform-admin-only: editing an existing firm's profile/status and its per-product
+ *  subscriptions. An empty `subscriptions` array is valid — it means every product
+ *  gets cancelled (the firm keeps existing but has nothing active). */
 export const firmEditSchema = z.object({
   firmName: z.string().min(1, "Firm name is required"),
   contactEmail: z.string().email("Enter a valid email address").optional().or(z.literal("")),
   contactPhone: z.string().optional().or(z.literal("")),
   status: z.enum(["ACTIVE", "DISABLED"]),
-  enabledApplications: z.array(z.enum(APPLICATION_TYPE_KEYS)).min(1, "Select at least one application"),
-  subscriptionStartDate: z.string().optional().or(z.literal("")),
-  subscriptionEndDate: z.string().optional().or(z.literal("")),
+  subscriptions: z.array(subscriptionEntrySchema),
 });
 
 export type FirmEditInput = z.infer<typeof firmEditSchema>;
+
+/** Platform-admin-only: manually recording a payment (e.g. bank transfer/UPI) against
+ *  one of a firm's product subscriptions — extends its validity by one billing cycle. */
+export const recordPaymentSchema = z.object({
+  amount: z.coerce.number().positive("Amount must be greater than 0"),
+  notes: z.string().optional().or(z.literal("")),
+});
+
+export type RecordPaymentInput = z.infer<typeof recordPaymentSchema>;
 
 /** Platform-admin-only: adding an additional login (ADMIN or PREPARER) to an existing firm. */
 export const firmUserCreateSchema = z.object({

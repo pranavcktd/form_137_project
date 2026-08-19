@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { firmOnboardingSchema } from "@/lib/validation/organization";
+import { syncFirmSubscriptions } from "@/lib/subscriptions";
 
 async function requireSuperAdmin() {
   const session = await auth();
@@ -20,6 +21,7 @@ export async function GET() {
     include: {
       _count: { select: { clients: true, users: true } },
       users: { where: { role: "ADMIN" }, take: 1, select: { email: true, name: true } },
+      subscriptions: true,
     },
   });
 
@@ -36,17 +38,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const {
-    firmName,
-    contactEmail,
-    contactPhone,
-    adminName,
-    adminEmail,
-    adminPassword,
-    enabledApplications,
-    subscriptionStartDate,
-    subscriptionEndDate,
-  } = parsed.data;
+  const { firmName, contactEmail, contactPhone, adminName, adminEmail, adminPassword, subscriptions } = parsed.data;
 
   const existingUser = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (existingUser) {
@@ -63,9 +55,6 @@ export async function POST(request: Request) {
       name: firmName,
       contactEmail: contactEmail || null,
       contactPhone: contactPhone || null,
-      enabledApplications,
-      subscriptionStartDate: subscriptionStartDate ? new Date(subscriptionStartDate) : null,
-      subscriptionEndDate: subscriptionEndDate ? new Date(subscriptionEndDate) : null,
       users: {
         create: {
           name: adminName,
@@ -76,6 +65,17 @@ export async function POST(request: Request) {
       },
     },
   });
+
+  await syncFirmSubscriptions(
+    firm.id,
+    subscriptions.map((s) => ({
+      application: s.application,
+      price: s.price,
+      billingCycle: s.billingCycle,
+      startDate: s.startDate ? new Date(s.startDate) : null,
+      endDate: s.endDate ? new Date(s.endDate) : null,
+    })),
+  );
 
   return NextResponse.json({ id: firm.id }, { status: 201 });
 }

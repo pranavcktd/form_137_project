@@ -23,8 +23,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
         if (!user) return null;
 
-        const isValid = await bcrypt.compare(password, user.passwordHash);
-        if (!isValid) return null;
+        const matchesCurrent = await bcrypt.compare(password, user.passwordHash);
+
+        // A self-service "forgot password" temp password doesn't replace the existing
+        // one until it's actually used — so it's checked as an alternative credential,
+        // valid only until it expires. See the forgot-password route for why.
+        const hasPendingTemp = Boolean(
+          user.pendingPasswordHash && user.pendingPasswordExpiresAt && user.pendingPasswordExpiresAt > new Date(),
+        );
+        const matchesPendingTemp = hasPendingTemp
+          ? await bcrypt.compare(password, user.pendingPasswordHash as string)
+          : false;
+
+        if (!matchesCurrent && !matchesPendingTemp) return null;
 
         // Disabled user or disabled firm: reject same as a bad password —
         // an internal error code here would leak account existence/status.
@@ -33,7 +44,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Captured before the overwrite below, so the session carries the
         // login *before this one* — what a "Last login: ..." banner means.
         const previousLoginAt = user.lastLoginAt;
-        await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+        const mustChangePassword = matchesPendingTemp || user.mustChangePassword;
+
+        if (matchesPendingTemp) {
+          // Promote the temp password to the real one and clear it, so it can't be reused.
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              passwordHash: user.pendingPasswordHash as string,
+              pendingPasswordHash: null,
+              pendingPasswordExpiresAt: null,
+              mustChangePassword: true,
+              lastLoginAt: new Date(),
+            },
+          });
+        } else {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              // Signed in with the still-known old password while a reset was pending —
+              // treat the pending one as abandoned rather than leaving it valid.
+              ...(user.pendingPasswordHash && { pendingPasswordHash: null, pendingPasswordExpiresAt: null }),
+              lastLoginAt: new Date(),
+            },
+          });
+        }
 
         return {
           id: user.id,
@@ -41,7 +76,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           role: user.role,
           organizationId: user.organizationId,
-          mustChangePassword: user.mustChangePassword,
+          mustChangePassword,
           previousLoginAt: previousLoginAt ? previousLoginAt.toISOString() : null,
         };
       },

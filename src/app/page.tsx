@@ -6,6 +6,8 @@ import { AppShell } from "@/components/app-shell";
 import { Badge, Card, PageHeader } from "@/components/ui";
 import { FvuVersionBanner } from "@/components/fvu-version-banner";
 import { applicationTypeLabel } from "@/lib/applicationTypes";
+import { isSubscriptionActive } from "@/lib/subscriptions";
+import { SubscriptionRenewPanel, type ProductSubscriptionInfo } from "@/components/subscription-renew";
 
 const PRODUCTS = [
   {
@@ -99,12 +101,26 @@ export default async function Home() {
     redirect("/admin");
   }
 
-  const [organization, clientCount, platformSettings] = await Promise.all([
+  const [organization, clientCount, platformSettings, subscriptions] = await Promise.all([
     prisma.organization.findUnique({ where: { id: session.user.organizationId } }),
     prisma.client.count({ where: { organizationId: session.user.organizationId } }),
     prisma.platformSettings.findUnique({ where: { id: "singleton" } }),
+    prisma.subscription.findMany({ where: { organizationId: session.user.organizationId } }),
   ]);
   const hideUnsubscribedModules = platformSettings?.hideUnsubscribedModules ?? false;
+  const activeSubscriptions = subscriptions.filter(isSubscriptionActive);
+  const entitledApplications = activeSubscriptions.map((s) => s.application);
+  const activeEndDates = activeSubscriptions.map((s) => s.endDate).filter((d): d is Date => d !== null);
+  const nearestRenewal = activeEndDates.length
+    ? new Date(Math.min(...activeEndDates.map((d) => d.getTime())))
+    : null;
+  const subscriptionByApp = new Map<string, ProductSubscriptionInfo>(
+    subscriptions.map((s) => [
+      s.application,
+      { price: Number(s.price), billingCycle: s.billingCycle, endDate: s.endDate?.toISOString() ?? null, status: s.status },
+    ]),
+  );
+  const canRenew = session.user.role === "ADMIN";
 
   return (
     <AppShell firmName={organization?.name}>
@@ -120,12 +136,14 @@ export default async function Home() {
             <div>
               <p className="text-sm font-semibold text-slate-900">{organization.name}</p>
               <p className="mt-1 text-sm text-slate-500">
-                Subscribed to: {organization.enabledApplications.map(applicationTypeLabel).join(", ")}
+                Subscribed to:{" "}
+                {entitledApplications.length
+                  ? entitledApplications.map(applicationTypeLabel).join(", ")
+                  : "No active subscriptions"}
               </p>
-              {organization.subscriptionEndDate && (
+              {nearestRenewal && (
                 <p className="mt-0.5 text-xs text-slate-400">
-                  Subscription valid through{" "}
-                  {new Date(organization.subscriptionEndDate).toLocaleDateString()}
+                  Next renewal due {nearestRenewal.toLocaleDateString()}
                 </p>
               )}
             </div>
@@ -158,7 +176,7 @@ export default async function Home() {
       </div>
 
       {PRODUCTS.map((product) => {
-        const entitled = organization?.enabledApplications.includes(product.application) ?? false;
+        const entitled = entitledApplications.includes(product.application);
         if (!entitled && hideUnsubscribedModules) return null;
 
         return (
@@ -168,10 +186,15 @@ export default async function Home() {
                 {product.name}
               </h2>
               <span className="text-xs text-slate-400">{product.tagline}</span>
-              {!entitled && (
+              {!entitled && !subscriptionByApp.get(product.application) && (
                 <Badge tone="slate">Not in your subscription</Badge>
               )}
             </div>
+            <SubscriptionRenewPanel
+              application={product.application}
+              subscription={subscriptionByApp.get(product.application) ?? null}
+              canRenew={canRenew}
+            />
             <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {product.services.map((service) => {
                 const active = service.built && entitled;

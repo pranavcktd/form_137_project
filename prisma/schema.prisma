@@ -179,28 +179,16 @@ model User {
   mustChangePassword Boolean  @default(false)
   lastLoginAt        DateTime?
 
+  /** A self-service "forgot password" temporary password, held alongside — not instead
+   *  of — passwordHash: the old password keeps working until this one is actually used
+   *  (or it expires), so a delayed/unread reset email can't lock someone out. Logging in
+   *  with it promotes it to passwordHash and forces mustChangePassword; logging in with
+   *  the old password instead just discards it as no longer needed. */
+  pendingPasswordHash      String?
+  pendingPasswordExpiresAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  passwordResetTokens PasswordResetToken[]
-}
-
-/**
- * A single-use, time-limited self-service "forgot password" link. Only the
- * SHA-256 hash of the token is stored — like a password — so a database
- * leak alone can't be used to reset anyone's account; the raw token only
- * ever exists in the emailed link itself.
- */
-model PasswordResetToken {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String    @unique
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-
-  @@index([userId])
 }
 
 /** An actual filing entity (Accounts Office/DTO/CDDO) that a Tax Professional firm files returns for. */

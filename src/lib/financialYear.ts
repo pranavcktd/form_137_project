@@ -27,6 +27,26 @@ export function isFutureFilingPeriod(
   return month > currentMonth;
 }
 
+export interface QuarterOption {
+  value: 0 | 1 | 2 | 3 | 4;
+  label: string;
+  /** Calendar month numbers (1=Jan..12=Dec) belonging to this quarter; empty for "all quarters". */
+  months: number[];
+}
+
+/** Q1 = Apr-Jun, Q2 = Jul-Sep, Q3 = Oct-Dec, Q4 = Jan-Mar, matching the Apr-Mar Indian FY. */
+export const QUARTERS: QuarterOption[] = [
+  { value: 0, label: "All quarters", months: [] },
+  { value: 1, label: "Q1 (Apr-Jun)", months: [4, 5, 6] },
+  { value: 2, label: "Q2 (Jul-Sep)", months: [7, 8, 9] },
+  { value: 3, label: "Q3 (Oct-Dec)", months: [10, 11, 12] },
+  { value: 4, label: "Q4 (Jan-Mar)", months: [1, 2, 3] },
+];
+
+export function monthsInQuarter(quarter: number): number[] {
+  return QUARTERS.find((q) => q.value === quarter)?.months ?? [];
+}
+
 export interface FinancialYearOption {
   value: number;
   label: string;
