@@ -1,15 +1,9 @@
 import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
-import ExcelJS from "exceljs";
 import { prisma } from "@/lib/prisma";
 import { requireFilingPeriod } from "@/lib/authz";
-import { formTypeLabel } from "@/lib/formTypeLabels";
 import { sendFilingReturnEmail } from "@/lib/alerts/notify";
-
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
+import { buildFilingPeriodExcel, monthLabel as getMonthLabel } from "@/lib/excel/buildFilingPeriodExcel";
 
 function responsiblePersonDisplayName(client: {
   responsiblePersonName: string | null;
@@ -58,27 +52,8 @@ export async function POST(
   ]);
   if (!client) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const monthLabel = MONTHS[filingPeriod.month - 1];
-
-  const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet(`${monthLabel} ${filingPeriod.financialYear}`);
-  sheet.addRow(["Serial No.", "TAN", "DDO Name", "Form Type", "Tax Deducted", "Total Remitted", "Difference"]);
-  sheet.getRow(1).font = { bold: true };
-  for (const r of ddoRecords) {
-    const taxDeducted = Number(r.taxDeducted);
-    const totalRemitted = Number(r.totalRemitted);
-    sheet.addRow([
-      r.serialNo,
-      r.tan,
-      r.name,
-      formTypeLabel(r.formType),
-      taxDeducted,
-      totalRemitted,
-      Math.round((taxDeducted - totalRemitted) * 100) / 100,
-    ]);
-  }
-  sheet.columns = [{ width: 10 }, { width: 14 }, { width: 30 }, { width: 44 }, { width: 14 }, { width: 14 }, { width: 14 }];
-  const excelBuffer = Buffer.from(await workbook.xlsx.writeBuffer());
+  const monthLabel = getMonthLabel(filingPeriod.month);
+  const excelBuffer = await buildFilingPeriodExcel(filingPeriod.financialYear, filingPeriod.month, ddoRecords);
 
   const attachments = [
     {

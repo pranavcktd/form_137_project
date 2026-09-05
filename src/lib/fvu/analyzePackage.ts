@@ -7,19 +7,39 @@ const PROJECT_ROOT = process.cwd();
 const CFR_JAR = path.join(PROJECT_ROOT, "vendor", "cfr", "cfr-0.152.jar");
 const BASELINE_JAR = path.join(PROJECT_ROOT, "vendor", "fvu", "24GFVU.jar");
 
+export type DiffStatus = "added" | "removed" | "changed" | "unchanged";
+
+export interface FieldLabelDiffRow {
+  /** The number the FVU itself puts in parentheses after the field name, e.g.
+   *  the "76" in "Responsible Person First Name(76)" — stable regardless of
+   *  wording, and what src/lib/fvu/errorFieldMap.ts keys off of. BH/TD/FH each
+   *  number their own fields from 1, so the same index can legitimately mean
+   *  a different field in each — `oldLabels`/`newLabels` can hold more than
+   *  one label when that index's text differs across record types. */
+  index: number;
+  oldLabels: string[];
+  newLabels: string[];
+  status: DiffStatus;
+}
+
+export interface ErrorCodeDiffRow {
+  code: string;
+  oldMessage: string | null;
+  newMessage: string | null;
+  status: DiffStatus;
+}
+
 export interface FvuPackageAnalysis {
   baselineJar: string;
   uploadedJarPath: string;
   classCounts: { baseline: number; uploaded: number };
   classesAdded: string[];
   classesRemoved: string[];
-  /** Field labels are how the FVU tags each error to a specific field, e.g.
-   *  "Responsible Person First Name(76)" — these strings survive Protean's
-   *  obfuscation intact even though class/method names don't, so diffing them
-   *  directly says which fields are new/removed without needing to actually
-   *  read the (unreadably renamed) validation logic itself. */
-  fieldLabels: { added: string[]; removed: string[]; unchangedCount: number };
-  errorCodes: { added: { code: string; sampleLine: string }[]; removed: string[] };
+  /** One row per field index seen in either version, old label(s) vs new —
+   *  this is what survives Protean's obfuscation intact, so it's the most
+   *  reliable signal of what actually changed without reading renamed logic. */
+  fieldLabelDiff: FieldLabelDiffRow[];
+  errorCodeDiff: ErrorCodeDiffRow[];
   /** Full decompiled source of the uploaded jar, kept on disk for whoever does
    *  the actual integration work to read directly — this report is a starting
    *  point, not a substitute for that. */
@@ -87,29 +107,37 @@ function runCfr(jarPath: string, outDir: string): Promise<void> {
 interface ExtractedSignals {
   classCount: number;
   classNames: string[];
-  fieldLabels: Set<string>;
-  errorCodes: Map<string, string>;
+  /** Field index -> the distinct label text(s) found at that index. */
+  fieldLabelsByIndex: Map<number, Set<string>>;
+  /** Error code -> one sample line of surrounding context. */
+  errorMessageByCode: Map<string, string>;
 }
 
-const FIELD_LABEL_PATTERN = /"([^"\\]{2,80}\([0-9]{1,3}\))"/g;
+// Captures the label text and its index separately (previously one combined
+// string) so rows can be grouped by index for an old-vs-new table.
+const FIELD_LABEL_PATTERN = /"([^"\\]{2,80})\((\d{1,3})\)"/g;
 const ERROR_CODE_PATTERN = /\b[A-Za-z0-9]+\/[A-Za-z0-9]+-FV-\d{3,5}\b/g;
 
 async function extractSignals(decompiledDir: string): Promise<ExtractedSignals> {
   const files = await listJavaFiles(decompiledDir);
-  const fieldLabels = new Set<string>();
-  const errorCodes = new Map<string, string>();
+  const fieldLabelsByIndex = new Map<number, Set<string>>();
+  const errorMessageByCode = new Map<string, string>();
 
   for (const file of files) {
     const content = await readFile(file, "utf8");
     for (const m of content.matchAll(FIELD_LABEL_PATTERN)) {
-      fieldLabels.add(m[1]);
+      const index = Number(m[2]);
+      const label = m[1];
+      const existing = fieldLabelsByIndex.get(index);
+      if (existing) existing.add(label);
+      else fieldLabelsByIndex.set(index, new Set([label]));
     }
     for (const m of content.matchAll(ERROR_CODE_PATTERN)) {
-      if (errorCodes.has(m[0])) continue;
+      if (errorMessageByCode.has(m[0])) continue;
       const lineStart = content.lastIndexOf("\n", m.index) + 1;
       const lineEndIdx = content.indexOf("\n", m.index);
       const lineEnd = lineEndIdx === -1 ? content.length : lineEndIdx;
-      errorCodes.set(m[0], content.slice(lineStart, lineEnd).trim().slice(0, 200));
+      errorMessageByCode.set(m[0], content.slice(lineStart, lineEnd).trim().slice(0, 200));
     }
   }
 
@@ -118,18 +146,64 @@ async function extractSignals(decompiledDir: string): Promise<ExtractedSignals> 
     classNames: files
       .map((f) => path.relative(decompiledDir, f).replace(/\.java$/, "").split(path.sep).join("."))
       .sort(),
-    fieldLabels,
-    errorCodes,
+    fieldLabelsByIndex,
+    errorMessageByCode,
   };
 }
 
-function diffSets(baseline: Set<string> | string[], updated: Set<string> | string[]) {
-  const baseSet = baseline instanceof Set ? baseline : new Set(baseline);
-  const updSet = updated instanceof Set ? updated : new Set(updated);
+function diffLists(baseline: string[], updated: string[]) {
+  const baseSet = new Set(baseline);
+  const updSet = new Set(updated);
   return {
-    added: [...updSet].filter((x) => !baseSet.has(x)).sort(),
-    removed: [...baseSet].filter((x) => !updSet.has(x)).sort(),
+    added: updated.filter((x) => !baseSet.has(x)).sort(),
+    removed: baseline.filter((x) => !updSet.has(x)).sort(),
   };
+}
+
+function diffFieldLabels(
+  baseline: Map<number, Set<string>>,
+  updated: Map<number, Set<string>>,
+): FieldLabelDiffRow[] {
+  const allIndices = new Set([...baseline.keys(), ...updated.keys()]);
+  const rows: FieldLabelDiffRow[] = [];
+
+  for (const index of allIndices) {
+    const oldLabels = [...(baseline.get(index) ?? [])].sort();
+    const newLabels = [...(updated.get(index) ?? [])].sort();
+
+    let status: DiffStatus;
+    if (oldLabels.length === 0) status = "added";
+    else if (newLabels.length === 0) status = "removed";
+    else if (oldLabels.length === newLabels.length && oldLabels.every((l, i) => l === newLabels[i])) {
+      status = "unchanged";
+    } else {
+      status = "changed";
+    }
+
+    rows.push({ index, oldLabels, newLabels, status });
+  }
+
+  return rows.sort((a, b) => a.index - b.index);
+}
+
+function diffErrorCodes(baseline: Map<string, string>, updated: Map<string, string>): ErrorCodeDiffRow[] {
+  const allCodes = new Set([...baseline.keys(), ...updated.keys()]);
+  const rows: ErrorCodeDiffRow[] = [];
+
+  for (const code of allCodes) {
+    const oldMessage = baseline.get(code) ?? null;
+    const newMessage = updated.get(code) ?? null;
+
+    let status: DiffStatus;
+    if (oldMessage === null) status = "added";
+    else if (newMessage === null) status = "removed";
+    else if (oldMessage === newMessage) status = "unchanged";
+    else status = "changed";
+
+    rows.push({ code, oldMessage, newMessage, status });
+  }
+
+  return rows.sort((a, b) => a.code.localeCompare(b.code));
 }
 
 /**
@@ -158,9 +232,7 @@ export async function analyzeFvuPackage(uploadedFilePath: string, workDir: strin
     throw new Error("CFR couldn't decompile any classes from the uploaded jar — is it a valid Java archive?");
   }
 
-  const fieldDiff = diffSets(baseline.fieldLabels, uploaded.fieldLabels);
-  const codeDiff = diffSets(new Set(baseline.errorCodes.keys()), new Set(uploaded.errorCodes.keys()));
-  const classDiff = diffSets(baseline.classNames, uploaded.classNames);
+  const classDiff = diffLists(baseline.classNames, uploaded.classNames);
 
   return {
     baselineJar: path.relative(PROJECT_ROOT, BASELINE_JAR),
@@ -168,15 +240,8 @@ export async function analyzeFvuPackage(uploadedFilePath: string, workDir: strin
     classCounts: { baseline: baseline.classCount, uploaded: uploaded.classCount },
     classesAdded: classDiff.added,
     classesRemoved: classDiff.removed,
-    fieldLabels: {
-      added: fieldDiff.added,
-      removed: fieldDiff.removed,
-      unchangedCount: uploaded.fieldLabels.size - fieldDiff.added.length,
-    },
-    errorCodes: {
-      added: codeDiff.added.map((code) => ({ code, sampleLine: uploaded.errorCodes.get(code) ?? "" })),
-      removed: codeDiff.removed,
-    },
+    fieldLabelDiff: diffFieldLabels(baseline.fieldLabelsByIndex, uploaded.fieldLabelsByIndex),
+    errorCodeDiff: diffErrorCodes(baseline.errorMessageByCode, uploaded.errorMessageByCode),
     decompiledOutputDir: path.relative(PROJECT_ROOT, uploadedOutDir),
   };
 }

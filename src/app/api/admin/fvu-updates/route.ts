@@ -31,7 +31,7 @@ export async function GET() {
 }
 
 /**
- * Accepts the FVU/RPU package as downloaded from Protean (a .zip or .jar),
+ * Accepts the FVU package as downloaded from Protean (a .zip or .jar) —
  * stores it, and decompiles + diffs it against the currently-vendored jar —
  * synchronously, since a full decompile+scan of the real FVU jar takes only
  * a few seconds. Never executes the uploaded file, only reads its bytecode.

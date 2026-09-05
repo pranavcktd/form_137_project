@@ -87,11 +87,18 @@ const QUICK_LINKS = [
   { href: "/dashboard", label: "Compliance Dashboard", description: "Filing status across all clients" },
 ] as const;
 
-const ADMIN_QUICK_LINK = {
-  href: "/team",
-  label: "Team",
-  description: "Manage your firm's own users — view, edit, disable, reset passwords",
-} as const;
+const ADMIN_QUICK_LINKS = [
+  {
+    href: "/team",
+    label: "Team",
+    description: "Manage your firm's own users — view, edit, disable, reset passwords",
+  },
+  {
+    href: "/backup",
+    label: "Backup & Restore",
+    description: "Download a full backup of your firm's data, or restore from one",
+  },
+] as const;
 
 export default async function Home() {
   const session = await auth();
@@ -169,7 +176,7 @@ export default async function Home() {
       )}
 
       <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {(session.user.role === "ADMIN" ? [...QUICK_LINKS, ADMIN_QUICK_LINK] : QUICK_LINKS).map((link) => (
+        {(session.user.role === "ADMIN" ? [...QUICK_LINKS, ...ADMIN_QUICK_LINKS] : QUICK_LINKS).map((link) => (
           <Link key={link.href} href={link.href}>
             <Card className="flex items-center justify-between p-4 transition-colors hover:border-indigo-200 hover:bg-indigo-50/40">
               <div>

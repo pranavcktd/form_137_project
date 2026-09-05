@@ -12,14 +12,30 @@ type UploadSummary = {
   createdAt: string;
 };
 
+type DiffStatus = "added" | "removed" | "changed" | "unchanged";
+
+type FieldLabelDiffRow = {
+  index: number;
+  oldLabels: string[];
+  newLabels: string[];
+  status: DiffStatus;
+};
+
+type ErrorCodeDiffRow = {
+  code: string;
+  oldMessage: string | null;
+  newMessage: string | null;
+  status: DiffStatus;
+};
+
 type FvuPackageAnalysis = {
   baselineJar: string;
   uploadedJarPath: string;
   classCounts: { baseline: number; uploaded: number };
   classesAdded: string[];
   classesRemoved: string[];
-  fieldLabels: { added: string[]; removed: string[]; unchangedCount: number };
-  errorCodes: { added: { code: string; sampleLine: string }[]; removed: string[] };
+  fieldLabelDiff: FieldLabelDiffRow[];
+  errorCodeDiff: ErrorCodeDiffRow[];
   decompiledOutputDir: string;
 };
 
@@ -55,9 +71,16 @@ export function FvuUpdatesClient() {
     setUploading(false);
 
     if (!res.ok) {
-      const body = await res.json();
-      const fieldErrors = body.error?.fieldErrors ? Object.values(body.error.fieldErrors).flat() : [];
-      setUploadError([...(body.error?.formErrors ?? []), ...fieldErrors].join(" ") || "Upload failed.");
+      // A body-size-limit rejection (or other server-level failure) returns an
+      // empty/non-JSON body rather than our own {error: {...}} shape — parsing
+      // that as JSON throws, which used to leave the upload looking like it
+      // silently did nothing instead of showing why it failed.
+      const body = await res.json().catch(() => null);
+      const fieldErrors = body?.error?.fieldErrors ? Object.values(body.error.fieldErrors).flat() : [];
+      setUploadError(
+        [...(body?.error?.formErrors ?? []), ...fieldErrors].join(" ") ||
+          `Upload failed (HTTP ${res.status}). The file may be too large or the server hit an unexpected error.`,
+      );
       return;
     }
 
@@ -99,12 +122,13 @@ export function FvuUpdatesClient() {
   return (
     <div className="space-y-6">
       <Card className="p-6">
-        <h3 className="mb-1 text-sm font-semibold text-slate-900">Upload a New FVU/RPU Package</h3>
+        <h3 className="mb-1 text-sm font-semibold text-slate-900">Upload a New FVU Package</h3>
         <p className="mb-4 text-sm text-slate-500">
-          Upload the .zip or .jar exactly as downloaded from Protean. The system decompiles it (never
-          runs it) and compares it against the currently built-in version — new/removed field labels,
-          new/removed error codes, and which internal classes changed. This is a starting point for
-          someone to review and implement from, not an automatic update to how returns are validated.
+          Upload the FVU .zip or .jar exactly as downloaded from Protean&apos;s Form 137/24G page (not
+          RPU — that's their separate TDS tool, which Nex doesn't support yet). The system decompiles
+          it (never runs it) and compares it against the currently built-in version — new/removed field
+          labels, new/removed error codes, and which internal classes changed. This is a starting point
+          for someone to review and implement from, not an automatic update to how returns are validated.
         </p>
         <form onSubmit={handleUpload} className="flex flex-wrap items-center gap-3">
           {uploadError && (
@@ -125,7 +149,7 @@ export function FvuUpdatesClient() {
       </Card>
 
       <Card className="overflow-x-auto">
-        {uploads.length === 0 && <EmptyState>No FVU/RPU packages uploaded yet.</EmptyState>}
+        {uploads.length === 0 && <EmptyState>No FVU packages uploaded yet.</EmptyState>}
         {uploads.length > 0 && (
           <table className="w-full text-left text-sm">
             <thead>
@@ -187,6 +211,114 @@ export function FvuUpdatesClient() {
   );
 }
 
+function StatusBadge({ status }: { status: DiffStatus }) {
+  const tone = status === "added" ? "green" : status === "removed" ? "red" : status === "changed" ? "amber" : "slate";
+  const label = status === "added" ? "New" : status === "removed" ? "Removed" : status === "changed" ? "Changed" : "Unchanged";
+  return <Badge tone={tone}>{label}</Badge>;
+}
+
+function FieldLabelTable({ rows }: { rows: FieldLabelDiffRow[] }) {
+  const [showUnchanged, setShowUnchanged] = useState(false);
+  const changedCount = rows.filter((r) => r.status !== "unchanged").length;
+  const visibleRows = showUnchanged ? rows : rows.filter((r) => r.status !== "unchanged");
+
+  if (rows.length === 0) return <p className="text-sm text-slate-500">No field labels found in either version.</p>;
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-sm font-medium text-slate-800">
+          Field labels <Badge tone={changedCount > 0 ? "amber" : "slate"}>{changedCount} changed</Badge>{" "}
+          <span className="text-xs font-normal text-slate-400">({rows.length} total)</span>
+        </p>
+        <label className="flex items-center gap-1.5 text-xs text-slate-600">
+          <input type="checkbox" checked={showUnchanged} onChange={(e) => setShowUnchanged(e.target.checked)} />
+          Show unchanged too
+        </label>
+      </div>
+      {visibleRows.length === 0 ? (
+        <p className="text-xs text-slate-500">Nothing changed.</p>
+      ) : (
+        <div className="max-h-96 overflow-y-auto rounded-lg border border-slate-200 bg-white">
+          <table className="w-full text-left text-xs">
+            <thead className="sticky top-0 bg-slate-50">
+              <tr className="border-b border-slate-200 text-slate-500">
+                <th className="px-3 py-2 font-medium">#</th>
+                <th className="px-3 py-2 font-medium">Old (built in)</th>
+                <th className="px-3 py-2 font-medium">New (uploaded)</th>
+                <th className="px-3 py-2 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-mono">
+              {visibleRows.map((row) => (
+                <tr key={row.index}>
+                  <td className="px-3 py-1.5 align-top">{row.index}</td>
+                  <td className="px-3 py-1.5 align-top text-slate-700">{row.oldLabels.join(", ") || "—"}</td>
+                  <td className="px-3 py-1.5 align-top text-slate-700">{row.newLabels.join(", ") || "—"}</td>
+                  <td className="px-3 py-1.5 align-top font-sans">
+                    <StatusBadge status={row.status} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ErrorCodeTable({ rows }: { rows: ErrorCodeDiffRow[] }) {
+  const [showUnchanged, setShowUnchanged] = useState(false);
+  const changedCount = rows.filter((r) => r.status !== "unchanged").length;
+  const visibleRows = showUnchanged ? rows : rows.filter((r) => r.status !== "unchanged");
+
+  if (rows.length === 0) return <p className="text-sm text-slate-500">No error codes found in either version.</p>;
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-sm font-medium text-slate-800">
+          Error codes <Badge tone={changedCount > 0 ? "amber" : "slate"}>{changedCount} changed</Badge>{" "}
+          <span className="text-xs font-normal text-slate-400">({rows.length} total)</span>
+        </p>
+        <label className="flex items-center gap-1.5 text-xs text-slate-600">
+          <input type="checkbox" checked={showUnchanged} onChange={(e) => setShowUnchanged(e.target.checked)} />
+          Show unchanged too
+        </label>
+      </div>
+      {visibleRows.length === 0 ? (
+        <p className="text-xs text-slate-500">Nothing changed.</p>
+      ) : (
+        <div className="max-h-96 overflow-y-auto rounded-lg border border-slate-200 bg-white">
+          <table className="w-full text-left text-xs">
+            <thead className="sticky top-0 bg-slate-50">
+              <tr className="border-b border-slate-200 text-slate-500">
+                <th className="px-3 py-2 font-medium">Code</th>
+                <th className="px-3 py-2 font-medium">Old</th>
+                <th className="px-3 py-2 font-medium">New</th>
+                <th className="px-3 py-2 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {visibleRows.map((row) => (
+                <tr key={row.code}>
+                  <td className="px-3 py-1.5 align-top font-mono">{row.code}</td>
+                  <td className="px-3 py-1.5 align-top text-slate-700">{row.oldMessage ?? "—"}</td>
+                  <td className="px-3 py-1.5 align-top text-slate-700">{row.newMessage ?? "—"}</td>
+                  <td className="px-3 py-1.5 align-top">
+                    <StatusBadge status={row.status} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StringListSection({ title, tone, items }: { title: string; tone: "green" | "red"; items: string[] }) {
   if (items.length === 0) return null;
   return (
@@ -207,15 +339,13 @@ function StringListSection({ title, tone, items }: { title: string; tone: "green
 
 function AnalysisReport({ analysis }: { analysis: FvuPackageAnalysis }) {
   const nothingChanged =
-    analysis.fieldLabels.added.length === 0 &&
-    analysis.fieldLabels.removed.length === 0 &&
-    analysis.errorCodes.added.length === 0 &&
-    analysis.errorCodes.removed.length === 0 &&
+    analysis.fieldLabelDiff.every((r) => r.status === "unchanged") &&
+    analysis.errorCodeDiff.every((r) => r.status === "unchanged") &&
     analysis.classesAdded.length === 0 &&
     analysis.classesRemoved.length === 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="flex flex-wrap gap-4 text-sm text-slate-600">
         <span>
           Classes: {analysis.classCounts.baseline} &rarr; {analysis.classCounts.uploaded}
@@ -231,15 +361,10 @@ function AnalysisReport({ analysis }: { analysis: FvuPackageAnalysis }) {
         </Alert>
       )}
 
+      <FieldLabelTable rows={analysis.fieldLabelDiff} />
+      <ErrorCodeTable rows={analysis.errorCodeDiff} />
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <StringListSection title="New field labels" tone="green" items={analysis.fieldLabels.added} />
-        <StringListSection title="Removed field labels" tone="red" items={analysis.fieldLabels.removed} />
-        <StringListSection
-          title="New error codes"
-          tone="green"
-          items={analysis.errorCodes.added.map((e) => `${e.code} — ${e.sampleLine}`)}
-        />
-        <StringListSection title="Removed error codes" tone="red" items={analysis.errorCodes.removed} />
         <StringListSection title="New internal classes" tone="green" items={analysis.classesAdded} />
         <StringListSection title="Removed internal classes" tone="red" items={analysis.classesRemoved} />
       </div>

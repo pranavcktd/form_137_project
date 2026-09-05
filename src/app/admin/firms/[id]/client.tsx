@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Alert, Badge, Button, Card, FieldLabel, LoadingState, Pagination, inputClass } from "@/components/ui";
 import { applicationTypeLabel } from "@/lib/applicationTypes";
+import { BackupRestorePanel } from "@/components/backup-restore-panel";
 import {
   initialSubscriptionState,
   SubscriptionProductFields,
@@ -640,6 +641,15 @@ export function FirmDetailClient({ firmId }: { firmId: string }) {
           pageSize={usersPage.pageSize}
         />
       </Card>
+
+      <div>
+        <h3 className="mb-3 text-sm font-semibold text-slate-900">Backup & Restore</h3>
+        <BackupRestorePanel
+          backupUrl={`/api/admin/tax-professionals/${firmId}/backup`}
+          restoreUrl={`/api/admin/tax-professionals/${firmId}/restore`}
+          backupLabel="Download This Firm's Backup"
+        />
+      </div>
     </div>
   );
 }
