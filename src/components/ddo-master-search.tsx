@@ -30,7 +30,7 @@ export function DdoMasterSearch({
   onSelect,
 }: {
   clientId: string;
-  onSelect: (ddo: DdoMasterSearchResult) => void;
+  onSelect: (ddo: DdoMasterSearchResult, justCreated: boolean) => void;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<DdoMasterSearchResult[]>([]);
@@ -62,7 +62,14 @@ export function DdoMasterSearch({
   }, [query, clientId]);
 
   const openAddModal = () => {
-    setNewDdo({ ...newDdoDefaults(), tan: query.trim().toUpperCase() });
+    // Only pre-fill the TAN if the search box actually looks like a TAN
+    // (a single alphanumeric token, no spaces) — otherwise a name search
+    // (e.g. "Zilla Parishad Pune") would silently seed the TAN field with
+    // garbage, the save would fail its TAN check, and it'd look like the
+    // form just isn't saving anything.
+    const trimmedQuery = query.trim().toUpperCase();
+    const looksLikeTan = /^[A-Z0-9]+$/.test(trimmedQuery) && trimmedQuery.length <= 10;
+    setNewDdo({ ...newDdoDefaults(), tan: looksLikeTan ? trimmedQuery : "" });
     setAddErrors([]);
     setShowAddModal(true);
     setOpen(false);
@@ -91,7 +98,7 @@ export function DdoMasterSearch({
     setShowAddModal(false);
     setQuery("");
     setResults([]);
-    onSelect(created);
+    onSelect(created, true);
   };
 
   return (
@@ -118,7 +125,7 @@ export function DdoMasterSearch({
                 className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-50"
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  onSelect(ddo);
+                  onSelect(ddo, false);
                   setQuery("");
                   setResults([]);
                   setOpen(false);

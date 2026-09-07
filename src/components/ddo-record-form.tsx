@@ -77,6 +77,7 @@ export function DdoRecordForm({
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [justCreatedDdo, setJustCreatedDdo] = useState(false);
 
   const fields = ddoEditableFields(financialYear, statementType);
   const ddoSelected = values.ddoMasterId.length > 0;
@@ -84,7 +85,8 @@ export function DdoRecordForm({
   const set = (property: keyof DdoRecordFormInput, value: string | number) =>
     setValues((prev) => ({ ...prev, [property]: value }));
 
-  const handleSelectDdo = (ddo: DdoMasterSearchResult) => {
+  const handleSelectDdo = (ddo: DdoMasterSearchResult, justCreated: boolean) => {
+    setJustCreatedDdo(justCreated);
     setValues((prev) => ({
       ...prev,
       ddoMasterId: ddo.id,
@@ -134,8 +136,10 @@ export function DdoRecordForm({
         </div>
       )}
       {ddoSelected && !initialValues && (
-        <p className="text-xs text-emerald-700">
-          Selected: {values.tan} &mdash; {values.name}
+        <p className="text-xs font-medium text-emerald-700">
+          {justCreatedDdo
+            ? `✓ Saved to DDO Master and selected: ${values.tan} — ${values.name}`
+            : `Selected: ${values.tan} — ${values.name}`}
         </p>
       )}
 
