@@ -12,9 +12,10 @@ const nextConfig: NextConfig = {
   // request from another device on the LAN (including the HMR websocket)
   // gets silently blocked, which looked like "login just reloads the page"
   // since the credentials request never even reached the server. Wildcarded
-  // to the whole office subnet since DHCP can hand out a different address
-  // than 192.168.1.33 later.
-  allowedDevOrigins: ["192.168.1.*"],
+  // per subnet since DHCP can hand out a different address within one, and
+  // this machine has been seen on more than one network (office/home/etc) —
+  // add another "x.x.x.*" entry here if a new network hits the same issue.
+  allowedDevOrigins: ["192.168.1.*", "10.142.144.*"],
 };
 
 export default nextConfig;
