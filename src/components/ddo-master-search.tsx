@@ -77,6 +77,13 @@ export function DdoMasterSearch({
 
   const handleAddDdo = async (e: React.FormEvent) => {
     e.preventDefault();
+    // React portals still bubble events through the *React* tree (not the
+    // DOM tree) — this form is rendered via Modal's portal to document.body,
+    // but React would otherwise still walk this submit event up into
+    // whatever <form> this component was mounted inside (e.g. the DDO
+    // transaction form), triggering its onSubmit too with whatever
+    // half-filled values it currently holds. Stop it here.
+    e.stopPropagation();
     setAdding(true);
     setAddErrors([]);
 
