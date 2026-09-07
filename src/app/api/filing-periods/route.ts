@@ -3,6 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { requireClient } from "@/lib/authz";
 import { filingPeriodSchema } from "@/lib/validation/filingPeriod";
 
+interface FormTypeSummaryRow {
+  formType: string | null;
+  count: number;
+  taxDeducted: number;
+  totalRemitted: number;
+}
+
 export async function GET(request: Request) {
   const clientId = new URL(request.url).searchParams.get("clientId");
   if (!clientId) {
@@ -19,7 +26,30 @@ export async function GET(request: Request) {
     include: { _count: { select: { ddoRecords: true, generatedFiles: true } } },
   });
 
-  return NextResponse.json(filingPeriods);
+  // Per-period, per-Form-Type DDO count + amount totals — one query for every
+  // period on the page rather than one per card.
+  const formTypeGroups = await prisma.ddoRecord.groupBy({
+    by: ["filingPeriodId", "formType"],
+    where: { filingPeriodId: { in: filingPeriods.map((p) => p.id) } },
+    _count: { _all: true },
+    _sum: { taxDeducted: true, totalRemitted: true },
+  });
+
+  const formTypeSummaryByPeriod = new Map<string, FormTypeSummaryRow[]>();
+  for (const group of formTypeGroups) {
+    const rows = formTypeSummaryByPeriod.get(group.filingPeriodId) ?? [];
+    rows.push({
+      formType: group.formType,
+      count: group._count._all,
+      taxDeducted: Number(group._sum.taxDeducted ?? 0),
+      totalRemitted: Number(group._sum.totalRemitted ?? 0),
+    });
+    formTypeSummaryByPeriod.set(group.filingPeriodId, rows);
+  }
+
+  return NextResponse.json(
+    filingPeriods.map((p) => ({ ...p, formTypeSummary: formTypeSummaryByPeriod.get(p.id) ?? [] })),
+  );
 }
 
 export async function POST(request: Request) {

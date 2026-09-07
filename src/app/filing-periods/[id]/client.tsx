@@ -25,6 +25,8 @@ import {
   inputClass,
 } from "@/components/ui";
 
+const currency = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 });
+
 type FilingPeriod = {
   id: string;
   clientId: string;
@@ -425,6 +427,19 @@ export function FilingPeriodDetailClient({
     })),
   );
 
+  const formTypeSummary = (() => {
+    const byFormType = new Map<string, { count: number; taxDeducted: number; totalRemitted: number }>();
+    for (const r of ddoRecords) {
+      const key = r.formType || "—";
+      const row = byFormType.get(key) ?? { count: 0, taxDeducted: 0, totalRemitted: 0 };
+      row.count += 1;
+      row.taxDeducted += Number(r.taxDeducted);
+      row.totalRemitted += Number(r.totalRemitted);
+      byFormType.set(key, row);
+    }
+    return [...byFormType.entries()].sort(([a], [b]) => a.localeCompare(b));
+  })();
+
   return (
     <div>
       <PageHeader
@@ -473,6 +488,22 @@ export function FilingPeriodDetailClient({
             ))}
           </Alert>
         </div>
+      )}
+
+      {formTypeSummary.length > 0 && (
+        <Card className="mt-4 flex flex-wrap gap-4 p-4 text-sm">
+          {formTypeSummary.map(([formTypeCode, row]) => (
+            <div key={formTypeCode} title={formTypeLabel(formTypeCode === "—" ? null : formTypeCode)}>
+              <p className="font-medium text-slate-900">
+                {formTypeCode} &middot; {row.count} DDO
+              </p>
+              <p className="text-xs text-slate-500">
+                Deducted &#8377;{currency.format(row.taxDeducted)} &middot; Remitted &#8377;
+                {currency.format(row.totalRemitted)}
+              </p>
+            </div>
+          ))}
+        </Card>
       )}
 
       <div className="mt-8 flex items-center justify-between">

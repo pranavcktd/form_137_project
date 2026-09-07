@@ -13,6 +13,7 @@ import {
   inputClass,
 } from "@/components/ui";
 import { listFinancialYears, currentFinancialYear } from "@/lib/financialYear";
+import { formTypeLabel } from "@/lib/formTypeLabels";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -20,6 +21,13 @@ const MONTHS = [
 ];
 
 type StatementType = "ORIGINAL" | "CORRECTION_M" | "CORRECTION_X";
+
+type FormTypeSummaryRow = {
+  formType: string | null;
+  count: number;
+  taxDeducted: number;
+  totalRemitted: number;
+};
 
 type FilingPeriod = {
   id: string;
@@ -30,7 +38,10 @@ type FilingPeriod = {
   receiptNumber: string | null;
   receiptDate: string | null;
   _count: { ddoRecords: number; generatedFiles: number };
+  formTypeSummary: FormTypeSummaryRow[];
 };
+
+const currency = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 });
 
 type FormValues = {
   financialYear: number;
@@ -257,6 +268,21 @@ export function FilingPeriodsListClient({ clientId }: { clientId: string }) {
                 <Badge tone="indigo">{p.statementType}</Badge>
                 <span>{p._count.ddoRecords} DDO record(s)</span>
               </div>
+              {p.formTypeSummary.length > 0 && (
+                <div className="space-y-1 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                  {p.formTypeSummary.map((row) => (
+                    <div key={row.formType ?? "none"} className="flex items-center justify-between gap-2">
+                      <span title={formTypeLabel(row.formType) || "No form type"}>
+                        {row.formType ?? "—"} &middot; {row.count} DDO
+                      </span>
+                      <span className="font-medium text-slate-800">
+                        Deducted &#8377;{currency.format(row.taxDeducted)} / Remitted &#8377;
+                        {currency.format(row.totalRemitted)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="mt-1 flex gap-2">
                 <Link
                   href={`/filing-periods/${p.id}`}
