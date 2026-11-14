@@ -113,7 +113,7 @@ export function DdoMasterSearch({
       <div className="flex gap-2">
         <input
           className={inputClass}
-          placeholder="Search DDO by TAN or name..."
+          placeholder="Search DDO by name, TAN, reg. no, address, city..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}

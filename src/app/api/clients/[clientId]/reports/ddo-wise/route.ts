@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { prisma } from "@/lib/prisma";
 import { requireClient } from "@/lib/authz";
+import { monthsInQuarter } from "@/lib/financialYear";
 import { formTypeLabel } from "@/lib/formTypeLabels";
 
 const MONTHS = [
@@ -9,12 +10,25 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-async function loadReportRows(clientId: string) {
+async function loadReportRows(
+  clientId: string,
+  financialYear: number | null,
+  quarter: number,
+  formType: string | null,
+) {
+  const months = monthsInQuarter(quarter);
   const ddoMasters = await prisma.ddoMaster.findMany({
     where: { clientId },
     orderBy: { name: "asc" },
     include: {
       ddoRecords: {
+        where: {
+          ...(formType !== null && { formType }),
+          filingPeriod: {
+            ...(financialYear !== null && { financialYear }),
+            ...(months.length > 0 && { month: { in: months } }),
+          },
+        },
         include: { filingPeriod: true },
         orderBy: [{ filingPeriod: { financialYear: "desc" } }, { filingPeriod: { month: "desc" } }],
       },
@@ -47,15 +61,28 @@ export async function GET(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!client) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const rows = await loadReportRows(clientId);
+  const url = new URL(request.url);
+  const financialYearParam = url.searchParams.get("financialYear");
+  const financialYear = financialYearParam ? Number(financialYearParam) : null;
+  const quarter = Number(url.searchParams.get("quarter")) || 0;
+  const formType = url.searchParams.get("formType") || null;
+  const rows = await loadReportRows(clientId, financialYear, quarter, formType);
 
-  const format = new URL(request.url).searchParams.get("format");
+  const format = url.searchParams.get("format");
   if (format !== "xlsx") {
     return NextResponse.json(rows);
   }
 
+  const sheetSuffix = [
+    financialYear ? `FY${financialYear}` : null,
+    quarter ? `Q${quarter}` : null,
+    formType, // raw code only — the full label can be too long for Excel's 31-char sheet-name limit
+  ]
+    .filter(Boolean)
+    .join(" ");
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("DDO-wise Entries");
+  const sheetName = (sheetSuffix ? `DDO-wise (${sheetSuffix})` : "DDO-wise Entries").slice(0, 31);
+  const sheet = workbook.addWorksheet(sheetName);
   sheet.addRow([
     "TAN", "DDO Name", "FY", "Month", "Statement Type", "Form Type", "Tax Deducted", "Total Remitted", "Difference",
   ]);
@@ -89,7 +116,7 @@ export async function GET(
     status: 200,
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="ddo-wise-report-${client.departmentName.replace(/\s+/g, "-")}.xlsx"`,
+      "Content-Disposition": `attachment; filename="ddo-wise-report${financialYear ? `-${financialYear}` : ""}${quarter ? `-Q${quarter}` : ""}${formType ? `-${formType}` : ""}-${client.departmentName.replace(/\s+/g, "-")}.xlsx"`,
     },
   });
 }
