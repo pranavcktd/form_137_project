@@ -69,7 +69,8 @@ export function SubscriptionRenewPanel({
         <span className="text-amber-600">Payment pending</span>
       ) : subscription.endDate ? (
         <span className={isExpired ? "font-medium text-red-600" : "text-slate-500"}>
-          {isExpired ? "Expired" : "Valid through"} {new Date(subscription.endDate).toLocaleDateString()}
+          {/* Explicit locale avoids a server/client hydration mismatch — see shell-chrome.tsx. */}
+          {isExpired ? "Expired" : "Valid through"} {new Date(subscription.endDate).toLocaleDateString("en-IN")}
         </span>
       ) : (
         <span className="text-slate-500">No expiry set</span>

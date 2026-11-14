@@ -30,19 +30,8 @@ export default async function ReportsMenuPage({
   ];
 
   return (
-    <AppShell>
-      <PageHeader
-        title="Reports"
-        subtitle={client?.departmentName}
-        actions={
-          <Link
-            href={`/clients/${clientId}/filing-periods`}
-            className="text-sm text-indigo-600 hover:underline"
-          >
-            &larr; Filing periods
-          </Link>
-        }
-      />
+    <AppShell clientNav={{ clientId, clientName: client?.departmentName, active: "reports" }}>
+      <PageHeader title="Reports" subtitle={client?.departmentName} />
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {reports.map((report) => (
           <Link key={report.href} href={report.href}>

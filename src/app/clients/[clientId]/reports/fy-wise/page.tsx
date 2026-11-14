@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/ui";
+import { prisma } from "@/lib/prisma";
 import { FyWiseReportClient } from "./client";
 
 export default async function FyWiseReportPage({
@@ -9,17 +9,11 @@ export default async function FyWiseReportPage({
   params: Promise<{ clientId: string }>;
 }) {
   const { clientId } = await params;
+  const client = await prisma.client.findUnique({ where: { id: clientId } });
 
   return (
-    <AppShell>
-      <PageHeader
-        title="FY-wise DDO Transactions"
-        actions={
-          <Link href={`/clients/${clientId}/reports`} className="text-sm text-indigo-600 hover:underline">
-            &larr; Reports
-          </Link>
-        }
-      />
+    <AppShell clientNav={{ clientId, clientName: client?.departmentName, active: "reports" }}>
+      <PageHeader title="FY-wise DDO Transactions" />
       <div className="mt-6">
         <FyWiseReportClient clientId={clientId} />
       </div>

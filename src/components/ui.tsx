@@ -245,7 +245,16 @@ export function ContactInfo({ align = "center", className = "" }: { align?: "cen
  * `compact` fits it inline in the header; the default stacked form suits
  * the more spacious auth pages.
  */
-export function NexLogo({ compact = false, className = "" }: { compact?: boolean; className?: string }) {
+export function NexLogo({
+  compact = false,
+  showCompanyName = true,
+  className = "",
+}: {
+  compact?: boolean;
+  /** Suppress the "(CoreNexGen AI...)" line — e.g. in a narrow sidebar where it only has room to wrap badly. */
+  showCompanyName?: boolean;
+  className?: string;
+}) {
   const badge = (
     <span
       className={`inline-flex items-center rounded-xl bg-indigo-600 font-bold text-white shadow-lg shadow-indigo-200 ${compact ? "px-2.5 py-1 text-sm" : "px-4 py-2 text-2xl"}`}
@@ -263,7 +272,7 @@ export function NexLogo({ compact = false, className = "" }: { compact?: boolean
     return (
       <span className={`inline-flex items-center gap-2 ${className}`}>
         {badge}
-        <span className="hidden sm:inline">{company}</span>
+        {showCompanyName && <span className="hidden sm:inline">{company}</span>}
       </span>
     );
   }
@@ -271,7 +280,7 @@ export function NexLogo({ compact = false, className = "" }: { compact?: boolean
   return (
     <span className={`inline-flex flex-col items-start gap-1.5 ${className}`}>
       {badge}
-      {company}
+      {showCompanyName && company}
     </span>
   );
 }

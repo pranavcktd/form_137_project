@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/ui";
 import { prisma } from "@/lib/prisma";
@@ -13,30 +12,10 @@ export default async function ClientFilingPeriodsPage({
   const client = await prisma.client.findUnique({ where: { id: clientId } });
 
   return (
-    <AppShell>
+    <AppShell clientNav={{ clientId, clientName: client?.departmentName, active: "filing-periods" }}>
       <PageHeader
         title={client?.departmentName ?? "Filing Periods"}
-        subtitle={
-          <>
-            AIN {client?.ain} &middot;{" "}
-            <Link href={`/clients/${clientId}`} className="text-indigo-600 hover:underline">
-              Edit client profile
-            </Link>
-            {" "}&middot;{" "}
-            <Link href={`/clients/${clientId}/ddo-master`} className="text-indigo-600 hover:underline">
-              DDO Master
-            </Link>
-            {" "}&middot;{" "}
-            <Link href={`/clients/${clientId}/reports`} className="text-indigo-600 hover:underline">
-              Reports
-            </Link>
-          </>
-        }
-        actions={
-          <Link href="/clients" className="text-sm text-indigo-600 hover:underline">
-            &larr; All clients
-          </Link>
-        }
+        subtitle={`AIN ${client?.ain ?? ""}`}
       />
       <div className="mt-6">
         <FilingPeriodsListClient clientId={clientId} />

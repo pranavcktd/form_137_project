@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
   ClientProfileFields,
   clientProfileDefaults,
@@ -102,14 +101,6 @@ export function ClientProfileEditor({ clientId }: { clientId: string }) {
 
   return (
     <Card className="p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <Link
-          href={`/clients/${clientId}/filing-periods`}
-          className="text-sm text-indigo-600 hover:underline"
-        >
-          &larr; Back to filing periods
-        </Link>
-      </div>
       <form onSubmit={handleSubmit} className="space-y-6">
         {errors.length > 0 && (
           <Alert>
