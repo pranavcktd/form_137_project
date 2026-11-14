@@ -60,6 +60,7 @@ export function DdoRecordForm({
   financialYear,
   statementType,
   initialValues,
+  defaultFormType,
   onSubmit,
   onCancel,
 }: {
@@ -67,11 +68,14 @@ export function DdoRecordForm({
   financialYear: number;
   statementType: StatementType;
   initialValues?: DdoRecordFormInput & { ddoMasterId?: string | null };
+  /** Pre-fills Form Type for a new entry with whatever was used last, since a batch of entries is usually all the same form — ignored when editing an existing record. */
+  defaultFormType?: string;
   onSubmit: (values: DdoRecordFormInput) => Promise<void>;
   onCancel: () => void;
 }) {
   const [values, setValues] = useState<DdoRecordFormInput & { ddoMasterId: string }>({
     ...ddoRecordDefaults(),
+    ...(defaultFormType ? { formType: defaultFormType } : {}),
     ...initialValues,
     ddoMasterId: initialValues?.ddoMasterId ?? "",
   });
@@ -194,9 +198,23 @@ export function DdoRecordForm({
                     step={isAmount ? "0.01" : undefined}
                     maxLength={typeof field.length === "number" ? field.length : undefined}
                     value={value}
-                    onChange={(e) =>
-                      set(property, isAmount ? Number(e.target.value) : e.target.value)
-                    }
+                    onChange={(e) => {
+                      if (!isAmount) {
+                        set(property, e.target.value);
+                        return;
+                      }
+                      const amount = Number(e.target.value);
+                      // Deducted and remitted are the same amount in the
+                      // common case — default remitted to match, but it
+                      // stays a normal editable field for partial/pending
+                      // remittances. Only on new entries: an edit might be
+                      // deliberately correcting a discrepancy between the two.
+                      if (property === "taxDeducted" && !initialValues) {
+                        setValues((prev) => ({ ...prev, taxDeducted: amount, totalRemitted: amount }));
+                      } else {
+                        set(property, amount);
+                      }
+                    }}
                   />
                 )}
                 <p className="text-xs text-slate-500">{field.remarks}</p>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DdoRecordForm } from "@/components/ddo-record-form";
 import type { DdoRecordFormInput } from "@/lib/validation/ddoRecord";
@@ -119,6 +118,15 @@ export function FilingPeriodDetailClient({
   const [client, setClient] = useState<Client | null>(null);
   const [ddoRecords, setDdoRecords] = useState<DdoRecord[]>([]);
   const [formMode, setFormMode] = useState<"none" | "new" | string>("none");
+  // Bumped after every successful save so the "new entry" form below remounts
+  // fresh (new DDO search, blank amounts) without the preparer re-clicking
+  // "+ Add Transaction" for each row of a batch.
+  const [newEntryKey, setNewEntryKey] = useState(0);
+  const [justSaved, setJustSaved] = useState(false);
+  // Tracked separately from ddoRecords (which only updates once the async
+  // reload below resolves) so the very next auto-continued entry gets the
+  // right default immediately, not one save behind.
+  const [lastFormType, setLastFormType] = useState<string | undefined>(undefined);
   const [importRows, setImportRows] = useState<ImportedRow[] | null>(null);
   const [importDuplicates, setImportDuplicates] = useState<DuplicateGroup[]>([]);
   const [existingRecordCount, setExistingRecordCount] = useState(0);
@@ -204,7 +212,12 @@ export function FilingPeriodDetailClient({
       const body = await res.json();
       throw new Error(body.error?.formErrors?.[0] ?? "Could not create the DDO record.");
     }
-    setFormMode("none");
+    // Stay on "new" (don't close the form) and remount it via the key bump,
+    // so the next transaction can be entered right away.
+    setLastFormType(values.formType || undefined);
+    setNewEntryKey((k) => k + 1);
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 2500);
     load();
   };
 
@@ -451,17 +464,7 @@ export function FilingPeriodDetailClient({
             {filingPeriod.month} &middot; {filingPeriod.statementType}
           </>
         }
-        actions={
-          <div className="flex items-center gap-3">
-            {locked && <Badge tone="green">Locked</Badge>}
-            <Link
-              href={`/clients/${filingPeriod.clientId}/filing-periods`}
-              className="text-sm text-indigo-600 hover:underline"
-            >
-              &larr; All filing periods
-            </Link>
-          </div>
-        }
+        actions={locked ? <Badge tone="green">Locked</Badge> : undefined}
       />
 
       {fvuBanner && <div className="mt-4">{fvuBanner}</div>}
@@ -679,11 +682,16 @@ export function FilingPeriodDetailClient({
       )}
 
       {formMode === "new" && !locked && (
-        <div className="mt-4">
+        <div className="mt-4 space-y-2">
+          {justSaved && (
+            <Alert tone="green">Saved — ready for the next entry. Click Cancel when you're done.</Alert>
+          )}
           <DdoRecordForm
+            key={newEntryKey}
             clientId={filingPeriod.clientId}
             financialYear={filingPeriod.financialYear}
             statementType={filingPeriod.statementType}
+            defaultFormType={lastFormType ?? ddoRecords[ddoRecords.length - 1]?.formType}
             onSubmit={createRecord}
             onCancel={() => setFormMode("none")}
           />
